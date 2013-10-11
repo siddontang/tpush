@@ -14,7 +14,7 @@ namespace tpush
         
     }
     
-    int TcpServer::listen(const string& ip, uint16_t port)
+    int TcpServer::listen(const Address& addr)
     {
         return 0;    
     }    
