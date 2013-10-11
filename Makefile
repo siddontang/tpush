@@ -10,7 +10,7 @@ EV_LIB = -L/usr/local/lib -I.libev/lib
 
 CCFLAGS = -O2 -Wall $(EV_INC)
 
-LDFLAGS = $(EV_LIB) -lev
+LDFLAGS = $(EV_LIB) -lev -lpthread -lrt
 
 OBJ_DIR = obj
 

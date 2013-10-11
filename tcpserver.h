@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include <stdint.h>
+#include "address.h"
 
 namespace tpush 
 {
@@ -14,7 +14,7 @@ namespace tpush
         TcpServer();
         ~TcpServer();
 
-        int listen(const std::string& ip, uint16_t port);
+        int listen(const Address& addr);
 
     private:
         
