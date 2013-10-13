@@ -5,12 +5,24 @@ RM = rm -rf
 ECHO = echo
 MKDIR = mkdir -p
 
+UNAME_S = $(shell uname -s)
+
 EV_INC = -I/usr/local/include -I.libev/include
 EV_LIB = -L/usr/local/lib -I.libev/lib
 
 CCFLAGS = -O2 -Wall $(EV_INC)
 
-LDFLAGS = $(EV_LIB) -lev -lpthread -lrt
+LDFLAGS = $(EV_LIB) -lev -lpthread 
+
+ifeq ($(UNAME_S), Linux)
+	CCFLAGS += -D LINUX
+	LDFLAGS += -lrt
+endif
+
+ifeq ($(UNAME_S), Darwin)
+	CCFLAGS += -D OSX
+endif
+
 
 OBJ_DIR = obj
 

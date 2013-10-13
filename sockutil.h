@@ -3,7 +3,6 @@
 
 namespace tpush
 {
-
     class SockUtil
     {
     public:
@@ -13,7 +12,7 @@ namespace tpush
         static int setReuseable(int sockFd, bool on);
         static int setKeepAlive(int scokFd, bool on);
     };
-    
+
 }
 
 #endif

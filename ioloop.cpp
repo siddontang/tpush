@@ -47,11 +47,6 @@ namespace tpush
 
     void IOLoop::wakeUp()
     {
-        if(m_stop)
-        {
-            return;    
-        }
-
         ev_async_send(m_loop, &m_async);    
     }
 
@@ -69,11 +64,16 @@ namespace tpush
         }
     }
 
-    void IOLoop::addTask(const TaskCallback& callback)
+    void IOLoop::addTask(const TaskFunc_t& func)
     {
+        if(m_stop)
         {
-            MutexGuard gu(m_taskMutex);
-            m_tasks.push_back(callback);    
+            return;    
+        }
+
+        {
+            SpinLockGuard gu(m_taskLock);
+            m_tasks.push_back(func);    
         }
 
         if(!inLoopThread() || m_runTasks)
@@ -86,14 +86,14 @@ namespace tpush
     {
         m_runTasks = true;
 
-        vector<TaskCallback> tasks;
+        vector<TaskFunc_t> tasks;
 
         {
-            MutexGuard gu(m_taskMutex);
+            SpinLockGuard gu(m_taskLock);
             m_tasks.swap(tasks);    
         }
 
-        for(size_t i = 0; i < tasks.size(); ++i)
+        for(size_t i = 0; i < tasks.size() && !m_stop; ++i)
         {
             tasks[i]();
         }

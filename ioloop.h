@@ -23,10 +23,9 @@ namespace tpush
         void start();
         void stop();
    
-        typedef std::tr1::function< void ()> TaskCallback;
+        typedef std::tr1::function< void ()> TaskFunc_t;
         
-        void addTask(const TaskCallback& callback);
-
+        void addTask(const TaskFunc_t& func);
 
     private:
         void wakeUp();
@@ -50,9 +49,9 @@ namespace tpush
        
         pthread_t m_threadId;
         
-        std::vector<TaskCallback> m_tasks;
+        std::vector<TaskFunc_t> m_tasks;
         
-        Mutex m_taskMutex;
+        SpinLock m_taskLock;
     };
     
 }

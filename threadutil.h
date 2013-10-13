@@ -2,11 +2,27 @@
 #define _THREADUTIL_H_
 
 #include <pthread.h>
+#include <tr1/functional>
 
 #include "nocopyable.h"
 
 namespace tpush
 {
+    class Thread : public nocopyable
+    {
+    public:
+        typedef std::tr1::function<void ()> ThreadFunc_t;
+
+        Thread(const ThreadFunc_t& func);
+        ~Thread();
+        
+        void start();
+        void stop();
+    
+    private: 
+        pthread_t m_thread;   
+        ThreadFunc_t m_func;
+    };
 
     class Mutex : public nocopyable
     {
@@ -92,7 +108,48 @@ namespace tpush
     private:
         Mutex& m_mutex;
         pthread_cond_t m_cond;
+    };
+    
+    class SpinLock : public nocopyable
+    {
+    public:
+        SpinLock() {
+            m_lock = 0;    
+        }
+        ~SpinLock() {} 
+
+        void lock()
+        {
+            while(__sync_lock_test_and_set(&m_lock, 1))
+            {
+            }    
+        }
+
+        void unlock()
+        {
+            __sync_lock_release(&m_lock);    
+        }
+        
+    private:
+        volatile int m_lock;   
     }; 
+
+    class SpinLockGuard : public nocopyable
+    {
+    public:
+        SpinLockGuard(SpinLock& lock) 
+            : m_lock(lock)
+        {
+            m_lock.lock();   
+        }
+
+        ~SpinLockGuard()
+        {
+            m_lock.unlock();
+        }
+    private:
+        SpinLock& m_lock;
+    };
 }
 
 #endif

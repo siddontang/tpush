@@ -22,7 +22,7 @@ namespace tpush
         //host byte order
         uint16_t port();
 
-        const struct sockaddr_in& addr() const { return m_addr; }
+        const struct sockaddr_in& sockAddr() const { return m_addr; }
 
     private:
         struct sockaddr_in m_addr;

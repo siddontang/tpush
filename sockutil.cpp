@@ -6,6 +6,8 @@
 #include <netinet/tcp.h>
 #include <netinet/in.h>
 
+#include "address.h"
+
 namespace tpush
 {
     int SockUtil::setNoDelay(int sockFd, bool on)
