@@ -24,11 +24,15 @@ namespace tpush
         void start();
         void stop();
    
-        typedef std::tr1::function< void ()> Callback_t;      
+        typedef std::tr1::function<void ()> Callback_t;      
         void addTask(const Callback_t& func);
 
-        typedef std::tr1::function< void (int)> SignalFunc_t;
+        typedef std::tr1::function<void (int)> SignalFunc_t;
         void addSignal(int signum, const SignalFunc_t& func);
+
+        typedef std::tr1::function<void (int, int)> SocketFunc_t;
+        void addSocket(int sockFd, const SocketFunc_t& func, int events);
+        void delSocket(int sockFd); 
 
     private:
         void wakeUp();
@@ -38,7 +42,6 @@ namespace tpush
         void check();
         static void onChecked(struct ev_loop*, struct ev_check*, int); 
        
-        void handleSignal(int signum);
         void clearSignals();
         static void onSignal(struct ev_loop*, struct ev_signal*, int);
         
@@ -67,6 +70,7 @@ namespace tpush
         public:
             ev_signal     signal;    
             SignalFunc_t  func;
+            int           signum;
         };
 
         typedef std::map<int, SignalWatcher*> SignalWatchers_t;

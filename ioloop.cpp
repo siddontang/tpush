@@ -132,20 +132,10 @@ namespace tpush
         runTasks();
     }
 
-    void IOLoop::handleSignal(int signum)
-    {
-        SignalWatchers_t::iterator iter = m_signalWatchers.find(signum);
-        if(iter != m_signalWatchers.end())
-        {
-            (iter->second->func)(signum);    
-        }
-    }
-
     void IOLoop::onSignal(struct ev_loop* loop, ev_signal* w, int revents)
     {
-        IOLoop* ioloop = (IOLoop*)ev_userdata(loop);
-        int signum = w->signum;
-        ioloop->handleSignal(signum);
+        SignalWatcher* sigWatcher = (SignalWatcher*)w;
+        (sigWatcher->func)(sigWatcher->signum);
     }
 
 
@@ -168,6 +158,8 @@ namespace tpush
         {
             SignalWatcher* watcher = new SignalWatcher;
             watcher->func = func;
+            watcher->signum = signum;
+
             m_signalWatchers[signum] = watcher;
 
             ev_signal_init(&watcher->signal, IOLoop::onSignal, signum);      

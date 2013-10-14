@@ -7,8 +7,8 @@ MKDIR = mkdir -p
 
 UNAME_S = $(shell uname -s)
 
-EV_INC = -I/usr/local/include -I.libev/include
-EV_LIB = -L/usr/local/lib -L.libev/lib
+EV_INC = -I/usr/local/include
+EV_LIB = -L/usr/local/lib 
 
 DEBUG ?= 0
 
