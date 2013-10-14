@@ -25,10 +25,12 @@ LDFLAGS = $(EV_LIB) -lev -lpthread
 ifeq ($(UNAME_S), Linux)
 	CCFLAGS += -D LINUX
 	LDFLAGS += -lrt
-endif
-
-ifeq ($(UNAME_S), Darwin)
-	CCFLAGS += -D OSX
+else
+	ifeq ($(UNAME_S), Darwin)
+		CCFLAGS += -D OSX
+	else
+		$(error only support linux and maxos)
+	endif
 endif
 
 

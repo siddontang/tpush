@@ -69,6 +69,20 @@ namespace tpush
 
     pid_t gettid()
     {
+#ifdef LINUX
         return syscall(SYS_gettid);    
-    }    
+#else
+        return syscall(SYS_thread_selfid);
+#endif
+    } 
+
+    bool isMainThread()
+    {
+#ifdef LINUX
+        return gettid() == getpid();
+#else
+        return pthread_main_np();
+
+#endif    
+    }       
 }

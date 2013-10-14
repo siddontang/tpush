@@ -152,6 +152,8 @@ namespace tpush
     };
 
     pid_t gettid();
+
+    bool isMainThread();
 }
 
 #endif

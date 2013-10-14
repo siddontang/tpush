@@ -76,6 +76,13 @@ namespace tpush
         typedef std::map<int, SignalWatcher*> SignalWatchers_t;
         SignalWatchers_t m_signalWatchers;
 
+        class SocketWatcher
+        {
+        public:
+            ev_io  io;
+            SocketFunc_t func;
+        };
+
         bool m_mainLoop;
     };
     

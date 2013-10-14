@@ -41,7 +41,7 @@ namespace tpush
         m_threadId = pthread_self();
         m_stop = false;
 
-        m_mainLoop = (getpid() == gettid()); 
+        m_mainLoop = isMainThread(); 
 
         ev_run(m_loop, 0);
     }
