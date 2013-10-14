@@ -1,15 +1,55 @@
 #include "sockutil.h"
 
+#include <stdio.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <netinet/tcp.h>
 #include <netinet/in.h>
+#include <assert.h>
 
 #include "address.h"
 
 namespace tpush
 {
+    int SockUtil::bindAndListen(const Address& addr)
+    {
+        int err = 0;
+        
+        int fd = socket(PF_INET, SOCK_STREAM, 0);
+        assert(fd > 0);
+        
+        do
+        {
+            struct sockaddr_in sockAddr = addr.sockAddr();
+            
+            if(bind(fd, (struct sockaddr*)&sockAddr, sizeof(sockAddr)) < 0)
+            {
+                err = errno;
+                perror("bind address error");
+                break;    
+            }
+
+            if(listen(fd, SOMAXCONN) < 0)
+            {
+                err = errno;
+                perror("listen address error");
+                break;     
+            }
+
+            SockUtil::setNonBlocking(fd, true);
+            SockUtil::setCloseOnExec(fd, true);
+            SockUtil::setReuseable(fd, true);
+
+            return fd;
+
+        }while(0);
+
+        close(fd);
+        return err;
+    }
+
     int SockUtil::setNoDelay(int sockFd, bool on)
     {
         int opt = on ? 1 : 0;

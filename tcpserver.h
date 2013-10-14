@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <tr1/functional>
 
 #include "nocopyable.h"
 #include "address.h"
@@ -19,6 +20,11 @@ namespace tpush
         ~TcpServer();
 
         int listen(const Address& addr);
+        
+        typedef std::tr1::function<void (int)> SignalFunc_t;
+        void addSignal(int signum, const SignalFunc_t& func);
+
+        void start();
         void stop();
 
     private:
@@ -27,6 +33,8 @@ namespace tpush
 
         //threads for handle connections
         IOLoopThreadPool* m_connLoops;
+    
+        IOLoop* m_mainLoop;
     };
         
 }

@@ -8,9 +8,17 @@ MKDIR = mkdir -p
 UNAME_S = $(shell uname -s)
 
 EV_INC = -I/usr/local/include -I.libev/include
-EV_LIB = -L/usr/local/lib -I.libev/lib
+EV_LIB = -L/usr/local/lib -L.libev/lib
 
-CCFLAGS = -O2 -Wall $(EV_INC)
+DEBUG ?= 0
+
+CCFLAGS = -Wall $(EV_INC)
+
+ifeq ($(DEBUG), 1)
+	CCFLAGS += -g -ggdb -DDEBUG
+else
+	CCFLAGS += -O2 -DNDEBUG
+endif
 
 LDFLAGS = $(EV_LIB) -lev -lpthread 
 

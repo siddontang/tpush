@@ -150,6 +150,8 @@ namespace tpush
     private:
         SpinLock& m_lock;
     };
+
+    pid_t gettid();
 }
 
 #endif

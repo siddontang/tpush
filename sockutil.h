@@ -3,9 +3,12 @@
 
 namespace tpush
 {
+    class Address;
     class SockUtil
     {
     public:
+        static int bindAndListen(const Address& addr);
+
         static int setNoDelay(int sockFd, bool on);
         static int setCloseOnExec(int sockFd, bool on);
         static int setNonBlocking(int sockFd, bool on);

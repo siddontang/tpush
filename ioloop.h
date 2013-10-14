@@ -3,6 +3,7 @@
 
 #include <tr1/functional>
 #include <vector>
+#include <map>
 
 extern "C" 
 {
@@ -23,9 +24,11 @@ namespace tpush
         void start();
         void stop();
    
-        typedef std::tr1::function< void ()> TaskFunc_t;
-        
-        void addTask(const TaskFunc_t& func);
+        typedef std::tr1::function< void ()> Callback_t;      
+        void addTask(const Callback_t& func);
+
+        typedef std::tr1::function< void (int)> SignalFunc_t;
+        void addSignal(int signum, const SignalFunc_t& func);
 
     private:
         void wakeUp();
@@ -34,6 +37,12 @@ namespace tpush
        
         void check();
         static void onChecked(struct ev_loop*, struct ev_check*, int); 
+       
+        void handleSignal(int signum);
+        void clearSignals();
+        static void onSignal(struct ev_loop*, struct ev_signal*, int);
+        
+        void asyncAddSignal(int signum, const SignalFunc_t& func);
         
         void runTasks();
 
@@ -41,17 +50,29 @@ namespace tpush
 
     private:
         struct ev_loop* m_loop;
-        struct ev_async m_async; 
-        struct ev_check m_check;
+        struct ev_async m_asyncWatcher; 
+        struct ev_check m_checkWatcher;
 
         bool m_stop;
         bool m_runTasks;
        
         pthread_t m_threadId;
         
-        std::vector<TaskFunc_t> m_tasks;
-        
+        std::vector<Callback_t> m_tasks;
+            
         SpinLock m_taskLock;
+
+        class SignalWatcher
+        {
+        public:
+            ev_signal     signal;    
+            SignalFunc_t  func;
+        };
+
+        typedef std::map<int, SignalWatcher*> SignalWatchers_t;
+        SignalWatchers_t m_signalWatchers;
+
+        bool m_mainLoop;
     };
     
 }

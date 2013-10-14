@@ -14,6 +14,8 @@ namespace tpush
 {
     TcpServer::TcpServer(int acceptLoopNum, int connLoopNum)
     {
+        m_mainLoop = new IOLoop();
+
         m_acceptLoops = new IOLoopThreadPool(acceptLoopNum);
         m_connLoops = new IOLoopThreadPool(connLoopNum);
     
@@ -25,38 +27,36 @@ namespace tpush
     {
         delete m_acceptLoops;
         delete m_connLoops;
+
+        delete m_mainLoop;
     }
     
 
     int TcpServer::listen(const Address& addr)
     {
-        int sockFd = socket(PF_INET, SOCK_STREAM, 0);
-        assert(sockFd > 0);
+        int sockFd = SockUtil::bindAndListen(addr);
         
         
-
-        struct sockaddr_in sockAddr = addr.sockAddr();       
-        if(bind(sockFd, (struct sockaddr*)&sockAddr, sizeof(sockAddr) < 0))
-        {
-            int err = errno;
-            close(sockFd);
-            return err;    
-        }
-
-        if(::listen(sockFd, SOMAXCONN))
-        {
-            int err = errno;
-            close(sockFd);
-            return err;    
-        }
-
+        
         return 0;    
-    }    
+    } 
+    
+    void TcpServer::addSignal(int signum, const SignalFunc_t& func)
+    {
+        m_mainLoop->addSignal(signum, func);   
+    } 
+    
+    void TcpServer::start()
+    {
+        m_mainLoop->start();
+    }  
 
     void TcpServer::stop()
     {
         m_acceptLoops->stop();
         m_connLoops->stop();
+    
+        m_mainLoop->stop();
     }
 }
 

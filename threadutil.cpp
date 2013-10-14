@@ -2,6 +2,9 @@
 
 #include <time.h>
 
+#include <unistd.h>
+#include <sys/syscall.h>
+
 namespace tpush
 {
     Thread::Thread(const ThreadFunc_t& func)
@@ -63,5 +66,9 @@ namespace tpush
         MutexGuard mg(m_mutex);
         pthread_cond_timedwait(&m_cond, m_mutex.get(), &ts);
     }
-    
+
+    pid_t gettid()
+    {
+        return syscall(SYS_gettid);    
+    }    
 }
