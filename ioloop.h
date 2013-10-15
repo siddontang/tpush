@@ -30,7 +30,7 @@ namespace tpush
         typedef std::tr1::function<void (int)> SignalFunc_t;
         void addSignal(int signum, const SignalFunc_t& func);
 
-        typedef std::tr1::function<void (int, int)> SocketFunc_t;
+        typedef std::tr1::function<int (int sockFd, int events)> SocketFunc_t;
         void addSocket(int sockFd, const SocketFunc_t& func, int events);
         void delSocket(int sockFd); 
 
@@ -82,6 +82,8 @@ namespace tpush
             ev_io  io;
             SocketFunc_t func;
         };
+
+        static std::vector<SocketWatcher*>  m_socketWatchers;
 
         bool m_mainLoop;
     };

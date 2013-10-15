@@ -4,10 +4,15 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <stdio.h>
+
 using namespace std;
 
 namespace tpush
 {
+    //for *unix, new fd descriptors is always the smallest positive integer 
+    vector<IOLoop::SocketWatcher*> IOLoop::m_socketWatchers(getdtablesize(), NULL);
+
     IOLoop::IOLoop()
     {
         m_stop = false;

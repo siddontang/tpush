@@ -22,6 +22,8 @@ int main()
 
     s.addSignal(SIGINT, std::tr1::bind(sigAction, &s, std::tr1::placeholders::_1));
     
+    printf("max file num %d", getdtablesize());
+
     s.start();
 
     printf("end\n");
