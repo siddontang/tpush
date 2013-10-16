@@ -27,12 +27,13 @@ namespace tpush
         typedef std::tr1::function<void ()> Callback_t;      
         void addTask(const Callback_t& func);
 
-        typedef std::tr1::function<void (int)> SignalFunc_t;
-        void addSignal(int signum, const SignalFunc_t& func);
+        void runTask(const Callback_t& func);
 
-        typedef std::tr1::function<int (int sockFd, int events)> SocketFunc_t;
-        void addSocket(int sockFd, const SocketFunc_t& func, int events);
-        void delSocket(int sockFd); 
+        bool isMainLoop() { return m_mainLoop; }
+
+        struct ev_loop* evloop() { return m_loop; }
+        void setIOInterval(int milliseconds) { ev_set_io_collect_interval(m_loop, double(milliseconds) / 1000); }
+        void setTimerInterval(int milliseconds) { ev_set_timeout_collect_interval(m_loop, double(milliseconds) / 1000); }
 
     private:
         void wakeUp();
@@ -41,11 +42,6 @@ namespace tpush
        
         void check();
         static void onChecked(struct ev_loop*, struct ev_check*, int); 
-       
-        void clearSignals();
-        static void onSignal(struct ev_loop*, struct ev_signal*, int);
-        
-        void asyncAddSignal(int signum, const SignalFunc_t& func);
         
         void runTasks();
 
@@ -64,26 +60,6 @@ namespace tpush
         std::vector<Callback_t> m_tasks;
             
         SpinLock m_taskLock;
-
-        class SignalWatcher
-        {
-        public:
-            ev_signal     signal;    
-            SignalFunc_t  func;
-            int           signum;
-        };
-
-        typedef std::map<int, SignalWatcher*> SignalWatchers_t;
-        SignalWatchers_t m_signalWatchers;
-
-        class SocketWatcher
-        {
-        public:
-            ev_io  io;
-            SocketFunc_t func;
-        };
-
-        static std::vector<SocketWatcher*>  m_socketWatchers;
 
         bool m_mainLoop;
     };

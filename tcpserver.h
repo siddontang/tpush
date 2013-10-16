@@ -12,7 +12,10 @@ namespace tpush
 {   
     class IOLoop;
     class IOLoopThreadPool;
-     
+    
+    class Signaler;
+    class Acceptor;
+
     class TcpServer : public nocopyable
     {
     public:
@@ -20,6 +23,8 @@ namespace tpush
         ~TcpServer();
 
         int listen(const Address& addr);
+       
+        void setConnLoopIOInterval(int milliseconds);
         
         typedef std::tr1::function<void (int)> SignalFunc_t;
         void addSignal(int signum, const SignalFunc_t& func);
@@ -28,13 +33,17 @@ namespace tpush
         void stop();
 
     private:
-        //threads for handle accept
-        IOLoopThreadPool* m_acceptLoops;
+        void onNewConnection(int sockFd, const Address& addr);
+
+    private:
+        Acceptor* m_acceptor;
 
         //threads for handle connections
         IOLoopThreadPool* m_connLoops;
     
         IOLoop* m_mainLoop;
+
+        Signaler* m_signaler;
     };
         
 }

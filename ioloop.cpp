@@ -11,7 +11,7 @@ using namespace std;
 namespace tpush
 {
     //for *unix, new fd descriptors is always the smallest positive integer 
-    vector<IOLoop::SocketWatcher*> IOLoop::m_socketWatchers(getdtablesize(), NULL);
+    //vector<IOLoop::SocketWatcher*> IOLoop::m_socketWatchers(getdtablesize(), NULL);
 
     IOLoop::IOLoop()
     {
@@ -35,8 +35,6 @@ namespace tpush
     {
         ev_async_stop(m_loop, &m_asyncWatcher);
         ev_check_stop(m_loop, &m_checkWatcher);
-        
-        clearSignals();
         
         ev_loop_destroy(m_loop);
     }
@@ -81,6 +79,23 @@ namespace tpush
         {
             ev_break(m_loop, EVBREAK_ALL);
             return;    
+        }
+    }
+
+    void IOLoop::runTask(const Callback_t& func)
+    {
+        if(m_stop)
+        {
+            return;    
+        }
+
+        if(inLoopThread())
+        {
+            func();    
+        }
+        else
+        {
+            addTask(func);
         }
     }
 
@@ -135,57 +150,5 @@ namespace tpush
         }
 
         runTasks();
-    }
-
-    void IOLoop::onSignal(struct ev_loop* loop, ev_signal* w, int revents)
-    {
-        SignalWatcher* sigWatcher = (SignalWatcher*)w;
-        (sigWatcher->func)(sigWatcher->signum);
-    }
-
-
-    void IOLoop::addSignal(int signum, const SignalFunc_t& func)
-    {
-        std::tr1::function<void ()> taskFunc = std::tr1::bind(&IOLoop::asyncAddSignal, this, signum, func);
-        addTask(taskFunc);    
-    }
-
-    void IOLoop::asyncAddSignal(int signum, const SignalFunc_t& func)
-    {
-        if(!m_mainLoop)
-        {
-            //only can add signal in main loop
-            return;    
-        }
-
-        SignalWatchers_t::iterator iter = m_signalWatchers.find(signum);
-        if(iter == m_signalWatchers.end())
-        {
-            SignalWatcher* watcher = new SignalWatcher;
-            watcher->func = func;
-            watcher->signum = signum;
-
-            m_signalWatchers[signum] = watcher;
-
-            ev_signal_init(&watcher->signal, IOLoop::onSignal, signum);      
-            ev_signal_start(m_loop, &watcher->signal);
-        }
-        else
-        {
-            iter->second->func = func;    
-        }
-    }
-
-    void IOLoop::clearSignals()
-    {
-        SignalWatchers_t::iterator iter = m_signalWatchers.begin();
-        while(iter != m_signalWatchers.end())
-        {
-            ev_signal_stop(m_loop, &iter->second->signal);
-            delete iter->second;
-            ++iter;    
-        }
-
-        m_signalWatchers.clear();
     }
 }

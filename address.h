@@ -17,7 +17,7 @@ namespace tpush
 
         //host byte order
         uint32_t ip();
-        std::string ipstr();
+        std::string ipstr() const;
 
         //host byte order
         uint16_t port();

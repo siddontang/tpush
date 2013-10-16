@@ -1,6 +1,9 @@
 #ifndef _ACCEPTOR_H_
 #define _ACCEPTOR_H_
 
+#include <tr1/functional>
+#include <vector>
+
 extern "C"
 {
 #include <ev.h>    
@@ -11,21 +14,30 @@ extern "C"
 namespace tpush
 {
     class IOLoop;
+    class IOLoopThreadPool;
+
+    class Address;
+    class AcceptLoop;
+
     class Acceptor : public nocopyable
     {
     public:
-        Acceptor(IOLoop* loop, int sockFd);    
+        Acceptor(int maxLoopNum);    
         ~Acceptor();
 
-    private:
-        void onRead();
-        void onAccepted();
-        void onError();
+        typedef std::tr1::function<void (int, const Address&)> NewConnectionFunc_t;
+
+        int listen(const Address& addr, const NewConnectionFunc_t& func);
+
+        void start();
+        void stop();
 
     private:
-        IOLoop* m_loop;
-        int m_sockFd;
+        IOLoopThreadPool* m_loopPool;
 
+        std::vector<AcceptLoop*> m_loops;
+
+        std::vector<int> m_sockFds;
     };
     
 }

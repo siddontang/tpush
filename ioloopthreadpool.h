@@ -17,7 +17,8 @@ namespace tpush
         void stop();
 
         int getPoolNum() { return (int)m_loops.size(); }
-        IOLoop* getLoop(int hashKey) { return m_loops[hashKey % getPoolNum()]; }
+        IOLoop* getHashLoop(int hashKey) { return m_loops[hashKey % getPoolNum()]; }
+        IOLoop* getLoop(int index) { return m_loops[index]; }
         std::vector<IOLoop*>& getLoops() { return m_loops; }
     
     private:

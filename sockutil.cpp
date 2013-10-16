@@ -38,8 +38,7 @@ namespace tpush
                 break;     
             }
 
-            SockUtil::setNonBlocking(fd, true);
-            SockUtil::setCloseOnExec(fd, true);
+            SockUtil::setNonBlockingAndCloseOnExec(fd);
             SockUtil::setReuseable(fd, true);
 
             return fd;
@@ -77,6 +76,11 @@ namespace tpush
     int SockUtil::setCloseOnExec(int sockFd, bool on)
     {
         return setFdFlag(sockFd, O_CLOEXEC, on);    
+    }
+
+    int SockUtil::setNonBlockingAndCloseOnExec(int sockFd)
+    {
+        return setFdFlag(sockFd, O_NONBLOCK | O_CLOEXEC, true);    
     }
 
     int SockUtil::setReuseable(int sockFd, bool on)

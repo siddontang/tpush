@@ -12,6 +12,8 @@ namespace tpush
         static int setNoDelay(int sockFd, bool on);
         static int setCloseOnExec(int sockFd, bool on);
         static int setNonBlocking(int sockFd, bool on);
+        static int setNonBlockingAndCloseOnExec(int sockFd);
+
         static int setReuseable(int sockFd, bool on);
         static int setKeepAlive(int scokFd, bool on);
     };
