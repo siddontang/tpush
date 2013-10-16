@@ -83,6 +83,11 @@ namespace tpush
         return setFdFlag(sockFd, O_NONBLOCK | O_CLOEXEC, true);    
     }
 
+    int SockUtil::createDummyFile()
+    {
+        return open("/dev/null", O_RDONLY | O_CLOEXEC);    
+    }
+
     int SockUtil::setReuseable(int sockFd, bool on)
     {
         int opt = on ? 1 : 0;

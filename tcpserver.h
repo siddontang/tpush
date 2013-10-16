@@ -15,11 +15,12 @@ namespace tpush
     
     class Signaler;
     class Acceptor;
+    class Connection;
 
     class TcpServer : public nocopyable
     {
     public:
-        TcpServer(int acceptLoopNum, int connLoopNum);
+        TcpServer(int acceptLoopNum, int connLoopNum, int maxConnections = 0);
         ~TcpServer();
 
         int listen(const Address& addr);
@@ -33,7 +34,7 @@ namespace tpush
         void stop();
 
     private:
-        void onNewConnection(int sockFd, const Address& addr);
+        void onNewConnection(int sockFd);
 
     private:
         Acceptor* m_acceptor;
@@ -44,6 +45,8 @@ namespace tpush
         IOLoop* m_mainLoop;
 
         Signaler* m_signaler;
+
+        std::vector<Connection*> m_connections;
     };
         
 }

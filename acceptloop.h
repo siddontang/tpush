@@ -23,7 +23,7 @@ namespace tpush
         void start();
         void stop();
 
-        typedef std::tr1::function<void (int, const Address&)> NewConnectionFunc_t;
+        typedef std::tr1::function<void (int)> NewConnectionFunc_t;
 
         void listen(int sockFd, const NewConnectionFunc_t& func);
     
@@ -41,9 +41,12 @@ namespace tpush
         public:
             struct ev_io io;
             NewConnectionFunc_t func;    
+            AcceptLoop* acceptLoop;
         };
         
         std::vector<Watcher*> m_watchers;
+    
+        int m_dummyFd;
     };
 
 

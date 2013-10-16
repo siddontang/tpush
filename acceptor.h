@@ -15,7 +15,6 @@ namespace tpush
 {
     class IOLoop;
     class IOLoopThreadPool;
-
     class Address;
     class AcceptLoop;
 
@@ -25,7 +24,7 @@ namespace tpush
         Acceptor(int maxLoopNum);    
         ~Acceptor();
 
-        typedef std::tr1::function<void (int, const Address&)> NewConnectionFunc_t;
+        typedef std::tr1::function<void (int)> NewConnectionFunc_t;
 
         int listen(const Address& addr, const NewConnectionFunc_t& func);
 

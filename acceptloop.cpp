@@ -3,6 +3,8 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <fcntl.h>
+#include <stdio.h>
 
 #include "ioloop.h"
 #include "address.h"
@@ -17,12 +19,13 @@ namespace tpush
     AcceptLoop::AcceptLoop(IOLoop* loop)
         : m_loop(loop)
     {
-        
+        m_dummyFd = SockUtil::createDummyFile();
     }
     
     AcceptLoop::~AcceptLoop()
     {
         clearContainer(m_watchers);
+        close(m_dummyFd);
     }
 
     void AcceptLoop::start()
@@ -70,6 +73,7 @@ namespace tpush
             m_watchers.push_back(watcher);
         }
 
+        watcher->acceptLoop = this;
         watcher->func = func;
         ev_io_start(m_loop->evloop(), &(watcher->io));
     }
@@ -79,26 +83,31 @@ namespace tpush
         if(!(revents & EV_READ))
         {
             //some error may occur, maybe call ev_io_stop ?
+            ev_io_stop(loop, w);
             return;    
         }
 
         Watcher* watcher = (Watcher*)w;
 
-        struct sockaddr_in addr;
-        socklen_t addrLen = sizeof(addr);
+        AcceptLoop* acceptLoop = watcher->acceptLoop;
 
-        int sockFd = accept(w->fd, (struct sockaddr*)&addr, &addrLen);
+        int sockFd = accept(w->fd, NULL, NULL);
         if(sockFd < 0)
         {
             int err = errno;
             if(err == EMFILE || err == ENFILE)
             {
-                //we may do later    
+                //we may do later   
+                close(acceptLoop->m_dummyFd);
+                sockFd = accept(w->fd, NULL, NULL);
+                if(sockFd > 0)
+                    close(sockFd);
+                acceptLoop->m_dummyFd = SockUtil::createDummyFile();
             }
             return;
         }    
 
         SockUtil::setNonBlockingAndCloseOnExec(sockFd);
-        (watcher->func)(sockFd, Address(addr));
+        (watcher->func)(sockFd);
     }
 }

@@ -5,6 +5,9 @@
 #include <errno.h>
 #include <assert.h>
 #include <sys/socket.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
 
 #include "ioloopthreadpool.h"
 #include "ioloop.h"
@@ -18,8 +21,9 @@ using namespace std::tr1::placeholders;
 
 namespace tpush
 {
-    TcpServer::TcpServer(int acceptLoopNum, int connLoopNum)
+    TcpServer::TcpServer(int acceptLoopNum, int connLoopNum, int maxConnections)
     {
+        assert(maxConnections >= 0);
         m_mainLoop = new IOLoop();
 
         m_acceptor = new Acceptor(acceptLoopNum);
@@ -28,7 +32,15 @@ namespace tpush
    
         m_signaler = new Signaler(m_mainLoop);
 
+        int dummyFd = SockUtil::createDummyFile(); 
+        close(dummyFd);
+    
+        maxConnections += dummyFd;
 
+        int maxFileNum = getdtablesize();
+        maxConnections = (maxConnections > maxFileNum || maxConnections == 0) ? maxFileNum : maxConnections;
+    
+        m_connections.resize(maxConnections);
     }
     
     TcpServer::~TcpServer()
@@ -39,13 +51,13 @@ namespace tpush
         delete m_mainLoop;
     }
 
-    void TcpServer::onNewConnection(int sockFd, const Address& addr)
+    void TcpServer::onNewConnection(int sockFd)
     {
     }
 
     int TcpServer::listen(const Address& addr)
     {
-        m_acceptor->listen(addr, std::tr1::bind(&TcpServer::onNewConnection, this, _1, _2));
+        m_acceptor->listen(addr, std::tr1::bind(&TcpServer::onNewConnection, this, _1));
         return 0;
     } 
    
