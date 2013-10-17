@@ -16,7 +16,10 @@ namespace tpush
         static int createDummyFile();
 
         static int setReuseable(int sockFd, bool on);
-        static int setKeepAlive(int scokFd, bool on);
+        static int setKeepAlive(int sockFd, bool on);
+
+        static int getLocalAddr(int sockFd, Address& addr);
+        static int getRemoteAddr(int sockFd, Address& addr);
     };
 
 }

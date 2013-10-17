@@ -103,4 +103,33 @@ namespace tpush
                         SO_KEEPALIVE, &opt,
                         static_cast<socklen_t>(sizeof(opt)));    
     }
+
+    int SockUtil::getLocalAddr(int sockFd, Address& addr)
+    {
+        struct sockaddr_in sockAddr;
+        socklen_t sockLen = sizeof(sockAddr);
+        if(getsockname(sockFd, (struct sockaddr*)&sockAddr, &sockLen) != 0)
+        {
+            int err = errno;
+            return err;
+        }
+
+        addr = Address(sockAddr);
+        return 0;
+    }
+
+    int SockUtil::getRemoteAddr(int sockFd, Address& addr)
+    {
+        struct sockaddr_in sockAddr;
+        socklen_t sockLen = sizeof(sockAddr);
+        if(getpeername(sockFd, (struct sockaddr*)&sockAddr, &sockLen) != 0)
+        {
+            int err = errno;
+            return err;
+        }
+
+        addr = Address(sockAddr);
+        return 0;
+    }
+
 }
