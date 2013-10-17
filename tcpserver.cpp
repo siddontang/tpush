@@ -12,15 +12,28 @@
 #include "ioloopthreadpool.h"
 #include "ioloop.h"
 #include "sockutil.h"
-
+#include "misc.h"
+#include "log.h"
 #include "acceptor.h"
 #include "signaler.h"
+
+#include "connection.h"
 
 using namespace std;
 using namespace std::tr1::placeholders;
 
 namespace tpush
 {
+    void dummyConnReadCallback(Connection*, const char*, int)
+    {
+        
+    }
+
+    void dummyConnCallback(Connection*)
+    {
+        
+    }
+
     TcpServer::TcpServer(int acceptLoopNum, int connLoopNum, int maxConnections)
     {
         assert(maxConnections >= 0);
@@ -32,15 +45,17 @@ namespace tpush
    
         m_signaler = new Signaler(m_mainLoop);
 
-        int dummyFd = SockUtil::createDummyFile(); 
-        close(dummyFd);
+        m_maxConnections = maxConnections;
+        m_curConnections = 0;
+        
+        int sysMaxFileNum = getdtablesize();
     
-        maxConnections += dummyFd;
-
-        int maxFileNum = getdtablesize();
-        maxConnections = (maxConnections > maxFileNum || maxConnections == 0) ? maxFileNum : maxConnections;
+        m_connections.resize(sysMaxFileNum);
     
-        m_connections.resize(maxConnections);
+        m_connReadFunc = std::tr1::bind(&dummyConnReadCallback, _1, _2, _3);
+        m_connWriteOverFunc = std::tr1::bind(&dummyConnCallback, _1);
+        m_connErrorFunc = std::tr1::bind(&dummyConnCallback, _1);
+        m_connCloseFunc = std::tr1::bind(&dummyConnCallback, _1);
     }
     
     TcpServer::~TcpServer()
@@ -49,10 +64,96 @@ namespace tpush
         delete m_acceptor;
 
         delete m_mainLoop;
+    
+        clearContainer(m_connections);
     }
 
     void TcpServer::onNewConnection(int sockFd)
     {
+        IOLoop* loop = m_connLoops->getHashLoop(sockFd);
+
+        loop->runTask(std::tr1::bind(&TcpServer::newConnectionInLoop, this, loop, sockFd));
+    }
+
+    static void onConnectionEvent(TcpServer* server, Connection* conn, Connection::Event event, const char* buffer, int bufferLen)
+    {
+        switch(event)
+        {
+            case Connection::ReadEvent:
+                server->onConnRead(conn, buffer, bufferLen);
+                break;
+            case Connection::WriteOverEvent:
+                server->onConnWriteOver(conn);
+                break;
+            case Connection::CloseEvent:
+                server->onConnClose(conn);
+                break;
+            case Connection::ErrorEvent:
+                server->onConnError(conn);
+                break;    
+        }    
+    }
+
+    void TcpServer::onConnRead(Connection* conn, const char* buffer, int bufferLen)
+    {
+        m_connReadFunc(conn, buffer, bufferLen);    
+    }
+
+    void TcpServer::onConnWriteOver(Connection* conn)
+    {
+        m_connWriteOverFunc(conn);
+    }
+
+    void TcpServer::onConnClose(Connection* conn)
+    {
+        m_connCloseFunc(conn);
+        deleteConnection(conn);
+    }
+
+    void TcpServer::onConnError(Connection* conn)
+    {
+        m_connErrorFunc(conn);
+        deleteConnection(conn);
+    }
+
+    void TcpServer::newConnectionInLoop(IOLoop* loop, int sockFd)
+    {
+        Connection* conn = m_connections[sockFd];
+        if(!conn)
+        {
+            conn = new Connection(loop, sockFd);
+            m_connections[sockFd] = conn;    
+        }    
+
+        conn->setCallback(std::tr1::bind(&onConnectionEvent, this, _1, _2, _3, _4));
+
+        conn->onEstablished();
+    }
+
+    void TcpServer::deleteConnection(Connection* conn)
+    {
+        IOLoop* loop = conn->getLoop();
+
+        if(!loop->inLoopThread())
+        {
+            loop->addTask(std::tr1::bind(&TcpServer::deleteConnectionInLoop, this, conn));    
+        }
+        else
+        {
+            deleteConnectionInLoop(conn);   
+        }
+    }
+
+    void TcpServer::deleteConnectionInLoop(Connection* conn)
+    {
+        IOLoop* loop = conn->getLoop();
+
+        assert(loop->inThreadLoop());
+        (void)loop;
+
+        int sockFd = conn->getSockFd();
+        delete conn;
+        m_connections[sockFd] = NULL;
     }
 
     int TcpServer::listen(const Address& addr)

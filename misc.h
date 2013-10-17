@@ -18,7 +18,8 @@ namespace tpush
 
         c.clear();
     }
-    
+   
+    const char* errorMsg(int errorNum); 
 }
 
 #endif

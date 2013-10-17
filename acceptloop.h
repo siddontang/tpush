@@ -41,7 +41,6 @@ namespace tpush
         public:
             struct ev_io io;
             NewConnectionFunc_t func;    
-            AcceptLoop* acceptLoop;
         };
         
         std::vector<Watcher*> m_watchers;

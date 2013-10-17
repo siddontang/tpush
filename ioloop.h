@@ -35,6 +35,8 @@ namespace tpush
         void setIOInterval(int milliseconds) { ev_set_io_collect_interval(m_loop, double(milliseconds) / 1000); }
         void setTimerInterval(int milliseconds) { ev_set_timeout_collect_interval(m_loop, double(milliseconds) / 1000); }
 
+        bool inLoopThread();
+
     private:
         void wakeUp();
         void handleWaker();
@@ -44,8 +46,6 @@ namespace tpush
         static void onChecked(struct ev_loop*, struct ev_check*, int); 
         
         void runTasks();
-
-        bool inLoopThread();
 
     private:
         struct ev_loop* m_loop;

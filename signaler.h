@@ -31,9 +31,9 @@ namespace tpush
         void clear();
 
     private:
-        void addToLoop(int signum, const SignalFunc_t& func);
-        void removeFromLoop(int signum);
-        void clearFromLoop();
+        void addInLoop(int signum, const SignalFunc_t& func);
+        void removeInLoop(int signum);
+        void clearInLoop();
 
         static void onSignal(struct ev_loop*, struct ev_signal*, int);
 

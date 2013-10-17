@@ -10,6 +10,7 @@
 #include "address.h"
 #include "misc.h"
 #include "sockutil.h"
+#include "log.h"
 
 using namespace std;
 
@@ -73,7 +74,7 @@ namespace tpush
             m_watchers.push_back(watcher);
         }
 
-        watcher->acceptLoop = this;
+        watcher->io.data = this;
         watcher->func = func;
         ev_io_start(m_loop->evloop(), &(watcher->io));
     }
@@ -82,6 +83,7 @@ namespace tpush
     {
         if(!(revents & EV_READ))
         {
+            LOG_ERROR("onAccept ev error");
             //some error may occur, maybe call ev_io_stop ?
             ev_io_stop(loop, w);
             return;    
@@ -89,12 +91,13 @@ namespace tpush
 
         Watcher* watcher = (Watcher*)w;
 
-        AcceptLoop* acceptLoop = watcher->acceptLoop;
+        AcceptLoop* acceptLoop = (AcceptLoop*)w->data; 
 
         int sockFd = accept(w->fd, NULL, NULL);
         if(sockFd < 0)
         {
             int err = errno;
+            LOG_ERROR("accept error ", errorMsg(err));
             if(err == EMFILE || err == ENFILE)
             {
                 //we may do later   

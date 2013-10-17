@@ -24,7 +24,7 @@ namespace tpush
             return;
         }
 
-        IOLoop::Callback_t taskFunc = std::tr1::bind(&Signaler::addToLoop, this, signum, func);
+        IOLoop::Callback_t taskFunc = std::tr1::bind(&Signaler::addInLoop, this, signum, func);
         m_loop->runTask(taskFunc);          
     }
 
@@ -35,17 +35,17 @@ namespace tpush
             return;
         }
 
-        IOLoop::Callback_t func = std::tr1::bind(&Signaler::removeFromLoop, this, signum);
+        IOLoop::Callback_t func = std::tr1::bind(&Signaler::removeInLoop, this, signum);
         m_loop->runTask(func);
     }
 
     void Signaler::clear()
     {
-        IOLoop::Callback_t func = std::tr1::bind(&Signaler::clearFromLoop, this);
+        IOLoop::Callback_t func = std::tr1::bind(&Signaler::clearInLoop, this);
         m_loop->runTask(func);    
     }
 
-    void Signaler::addToLoop(int signum, const SignalFunc_t& func)
+    void Signaler::addInLoop(int signum, const SignalFunc_t& func)
     {
         if(!m_loop->isMainLoop())
         {
@@ -64,7 +64,7 @@ namespace tpush
         w->func = func;    
     }
 
-    void Signaler::removeFromLoop(int signum)
+    void Signaler::removeInLoop(int signum)
     {
         if(!m_loop->isMainLoop())
         {
@@ -80,7 +80,7 @@ namespace tpush
         ev_signal_stop(m_loop->evloop(), &w->signal);
     }
 
-    void Signaler::clearFromLoop()
+    void Signaler::clearInLoop()
     {
         if(!m_loop->isMainLoop())
         {
@@ -89,7 +89,7 @@ namespace tpush
 
         for(size_t i = 0; i < m_watchers.size(); i++)
         {
-            removeFromLoop(int(i));
+            removeInLoop(int(i));
         }
     }
 
