@@ -61,6 +61,8 @@ namespace tpush
 
         void sendInLoop(const std::string& data);
 
+        void resetIOEvent(int events);
+
     private:
         IOLoop* m_loop;
 

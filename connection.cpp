@@ -56,14 +56,23 @@ namespace tpush
    
     void Connection::shutDown()
     {
-        m_status = Disconnecting;
-        
-        if(!m_loop->inLoopThread())
+        assert(m_status == Connected);
+
+        if(m_status == Disconnecting || m_status == Disconnected)
         {
-            return m_loop->runTask(std::tr1::bind(&Connection::shutDown, this));    
+            return;    
         }
 
-        handleClose();
+        m_status = Disconnecting;
+
+        if(!m_loop->inLoopThread())
+        {
+            return m_loop->runTask(std::tr1::bind(&Connection::handleClose, this));    
+        }
+        else
+        {
+            handleClose();
+        }
     }
     
     void Connection::onData(struct ev_loop* loop, struct ev_io* w, int revents)
@@ -96,11 +105,12 @@ namespace tpush
         if(n > 0)
         {
             m_func(this, ReadEvent, buf, n); 
+            return;
         }
         else if(n == 0)
         {
-            m_func(this, CloseEvent, NULL, 0);
             handleClose();
+            return;
         }
         else
         {
@@ -117,6 +127,12 @@ namespace tpush
 
     void Connection::handleWrite()
     {
+        if(m_sendBuffer.empty())
+        {
+            resetIOEvent(EV_READ);
+            return;    
+        }
+
         int sockFd = m_io.fd;
         
         int n = write(sockFd, m_sendBuffer.data(), m_sendBuffer.size());
@@ -125,10 +141,10 @@ namespace tpush
             m_sendBuffer.clear();
 
             m_func(this, WriteOverEvent, NULL, 0);
-            
-            ev_io_stop(m_loop->evloop(), &m_io);
-            ev_io_set(&m_io, sockFd, EV_READ);    
-            ev_io_start(m_loop->evloop(), &m_io);
+
+            resetIOEvent(EV_READ);
+
+            return;
         }
         else if(n < 0)
         {
@@ -148,24 +164,14 @@ namespace tpush
             }
         }
         
-        //not write over, write later
-        if(!(m_io.events & EV_WRITE))
-        {
-            //if no write event, add it
-            ev_io_stop(m_loop->evloop(), &m_io);
-            ev_io_set(&m_io, sockFd, EV_READ | EV_WRITE);    
-            ev_io_start(m_loop->evloop(), &m_io);
-        }    
+        //some send data may be left, we may send it next time
+        resetIOEvent(EV_READ | EV_WRITE);
 
         m_sendBuffer = m_sendBuffer.substr(n);
     }
 
     void Connection::handleError()
     {
-        m_status = Disconnected;
-
-        ev_io_stop(m_loop->evloop(), &m_io);
-    
         m_func(this, ErrorEvent, NULL, NULL);
     }
 
@@ -173,8 +179,12 @@ namespace tpush
     {
         m_status = Disconnected;
 
+        int sockFd = m_io.fd;
+
         ev_io_stop(m_loop->evloop(), &m_io);
     
+        close(sockFd);    
+
         m_func(this, CloseEvent, NULL, NULL);
     }
 
@@ -219,5 +229,18 @@ namespace tpush
         }
         
         handleWrite();
+    }
+
+    void Connection::resetIOEvent(int events)
+    {
+        assert(m_loop->inLoopThread());
+
+        if(m_io.events != events)
+        {
+            int sockFd = m_io.fd;
+            ev_io_stop(m_loop->evloop(), &m_io);
+            ev_io_set(&m_io, sockFd, events);
+            ev_io_start(m_loop->evloop(), &m_io);
+        }
     }
 }

@@ -35,7 +35,7 @@ namespace tpush
         memcpy(&m_addr, &addr, sizeof(addr)); 
     }
 
-    uint32_t Address::ip()
+    uint32_t Address::ip() const
     {
         return ntohl(m_addr.sin_addr.s_addr);    
     }
@@ -48,7 +48,7 @@ namespace tpush
         return string(buf, 32);
     }
 
-    uint16_t Address::port()
+    uint16_t Address::port() const
     {
         return ntohs(m_addr.sin_port);    
     }

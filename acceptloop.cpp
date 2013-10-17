@@ -36,11 +36,11 @@ namespace tpush
 
     void AcceptLoop::stop()
     {
-        IOLoop::Callback_t func = std::tr1::bind(&AcceptLoop::stopFromLoop, this);
+        IOLoop::Callback_t func = std::tr1::bind(&AcceptLoop::stopInLoop, this);
         m_loop->runTask(func);
     }
 
-    void AcceptLoop::stopFromLoop()
+    void AcceptLoop::stopInLoop()
     {
         for(size_t i = 0; i < m_watchers.size(); i++)
         {
@@ -50,11 +50,11 @@ namespace tpush
 
     void AcceptLoop::listen(int sockFd, const NewConnectionFunc_t& func)
     {
-        IOLoop::Callback_t taskFunc = std::tr1::bind(&AcceptLoop::listenFromLoop, this, sockFd, func);
+        IOLoop::Callback_t taskFunc = std::tr1::bind(&AcceptLoop::listenInLoop, this, sockFd, func);
         m_loop->runTask(taskFunc);    
     } 
 
-    void AcceptLoop::listenFromLoop(int sockFd, const NewConnectionFunc_t& func)
+    void AcceptLoop::listenInLoop(int sockFd, const NewConnectionFunc_t& func)
     {
         Watcher* watcher = NULL;
         for(size_t i = 0; i < m_watchers.size(); i++)

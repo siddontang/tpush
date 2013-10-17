@@ -36,7 +36,7 @@ namespace tpush
 
     TcpServer::TcpServer(int acceptLoopNum, int connLoopNum, int maxConnections)
     {
-        assert(maxConnections >= 0);
+        assert(maxConnections > 0);
         m_mainLoop = new IOLoop();
 
         m_acceptor = new Acceptor(acceptLoopNum);
@@ -47,10 +47,11 @@ namespace tpush
 
         m_maxConnections = maxConnections;
         m_curConnections = 0;
-        
-        int sysMaxFileNum = getdtablesize();
     
-        m_connections.resize(sysMaxFileNum);
+        //int sysMaxFileNum = getdtablesize();
+   
+        //we prealloc connection vector and never change its size
+        m_connections.resize(int(m_maxConnections * 1.5) + 1024);
     
         m_connReadFunc = std::tr1::bind(&dummyConnReadCallback, _1, _2, _3);
         m_connWriteOverFunc = std::tr1::bind(&dummyConnCallback, _1);
@@ -70,26 +71,37 @@ namespace tpush
 
     void TcpServer::onNewConnection(int sockFd)
     {
+        int connNum = __sync_add_and_fetch(&m_curConnections, 1);
+        LOG_INFO("cur conn number %d", connNum);
+
+        if(connNum > m_maxConnections)
+        {
+            LOG_ERROR("exceed max connections");
+            close(sockFd);
+            __sync_sub_and_fetch(&m_curConnections, 1);
+            return;    
+        }
+
         IOLoop* loop = m_connLoops->getHashLoop(sockFd);
 
         loop->runTask(std::tr1::bind(&TcpServer::newConnectionInLoop, this, loop, sockFd));
     }
 
-    static void onConnectionEvent(TcpServer* server, Connection* conn, Connection::Event event, const char* buffer, int bufferLen)
+    void TcpServer::onConnEvent(Connection* conn, Connection::Event event, const char* buffer, int bufferLen)
     {
         switch(event)
         {
             case Connection::ReadEvent:
-                server->onConnRead(conn, buffer, bufferLen);
+                onConnRead(conn, buffer, bufferLen);
                 break;
             case Connection::WriteOverEvent:
-                server->onConnWriteOver(conn);
+                onConnWriteOver(conn);
                 break;
             case Connection::CloseEvent:
-                server->onConnClose(conn);
+                onConnClose(conn);
                 break;
             case Connection::ErrorEvent:
-                server->onConnError(conn);
+                onConnError(conn);
                 break;    
         }    
     }
@@ -113,7 +125,7 @@ namespace tpush
     void TcpServer::onConnError(Connection* conn)
     {
         m_connErrorFunc(conn);
-        deleteConnection(conn);
+        conn->shutDown();
     }
 
     void TcpServer::newConnectionInLoop(IOLoop* loop, int sockFd)
@@ -125,7 +137,7 @@ namespace tpush
             m_connections[sockFd] = conn;    
         }    
 
-        conn->setCallback(std::tr1::bind(&onConnectionEvent, this, _1, _2, _3, _4));
+        conn->setCallback(std::tr1::bind(&TcpServer::onConnEvent, this, _1, _2, _3, _4));
 
         conn->onEstablished();
     }
@@ -154,6 +166,8 @@ namespace tpush
         int sockFd = conn->getSockFd();
         delete conn;
         m_connections[sockFd] = NULL;
+
+        __sync_sub_and_fetch(&m_curConnections, 1);
     }
 
     int TcpServer::listen(const Address& addr)

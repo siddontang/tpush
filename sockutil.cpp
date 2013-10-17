@@ -10,6 +10,8 @@
 #include <assert.h>
 
 #include "address.h"
+#include "misc.h"
+#include "log.h"
 
 namespace tpush
 {
@@ -18,7 +20,15 @@ namespace tpush
         int err = 0;
         
         int fd = socket(PF_INET, SOCK_STREAM, 0);
-        assert(fd > 0);
+        if(fd < 0)
+        {
+            err = errno;
+            LOG_ERROR("create socket error %s", errorMsg(err));
+            return fd;    
+        }
+            
+        SockUtil::setNonBlockingAndCloseOnExec(fd);
+        SockUtil::setReuseable(fd, true);
         
         do
         {
@@ -27,19 +37,17 @@ namespace tpush
             if(bind(fd, (struct sockaddr*)&sockAddr, sizeof(sockAddr)) < 0)
             {
                 err = errno;
-                perror("bind address error");
+                LOG_ERROR("bind address %s:%d error: %s", addr.ipstr().c_str(), addr.port(), errorMsg(err));
                 break;    
             }
 
             if(listen(fd, SOMAXCONN) < 0)
             {
                 err = errno;
-                perror("listen address error");
+                LOG_ERROR("listen address %s:%d error: %s", addr.ipstr().c_str(), addr.port(), errorMsg(err));
                 break;     
             }
 
-            SockUtil::setNonBlockingAndCloseOnExec(fd);
-            SockUtil::setReuseable(fd, true);
 
             return fd;
 

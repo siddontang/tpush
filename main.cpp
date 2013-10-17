@@ -30,7 +30,7 @@ void onWriteOver(Connection* conn)
 {
     LOG_INFO("conn write over");
 
-    conn->shutDown();
+//    conn->shutDown();
 }
 
 void onError(Connection* conn)
@@ -45,7 +45,7 @@ void onClose(Connection* conn)
 
 int main()
 {
-    TcpServer s(2, 10);
+    TcpServer s(2, 10, 100);
     s.listen(Address(11181));
 
     s.addSignal(SIGINT, std::tr1::bind(sigAction, &s, std::tr1::placeholders::_1));

@@ -28,8 +28,8 @@ namespace tpush
         void listen(int sockFd, const NewConnectionFunc_t& func);
     
     private:
-        void stopFromLoop();
-        void listenFromLoop(int sockFd, const NewConnectionFunc_t& func);
+        void stopInLoop();
+        void listenInLoop(int sockFd, const NewConnectionFunc_t& func);
 
         static void onAccept(struct ev_loop*, struct ev_io*, int);
      

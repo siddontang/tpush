@@ -8,6 +8,7 @@
 #include "nocopyable.h"
 #include "address.h"
 #include "threadutil.h"
+#include "connection.h"
 
 namespace tpush 
 {   
@@ -21,7 +22,7 @@ namespace tpush
     class TcpServer : public nocopyable
     {
     public:
-        TcpServer(int acceptLoopNum, int connLoopNum, int maxConnections = 0);
+        TcpServer(int acceptLoopNum, int connLoopNum, int maxConnections);
         ~TcpServer();
 
         int listen(const Address& addr);
@@ -33,11 +34,6 @@ namespace tpush
 
         void start();
         void stop();
-
-        void onConnRead(Connection* conn, const char* buffer, int bufferLen);
-        void onConnWriteOver(Connection* conn);
-        void onConnError(Connection* conn);
-        void onConnClose(Connection* conn);
 
         typedef std::tr1::function<void (Connection*, const char*, int)> ConnReadCallback_t;
         void setConnReadCallback(const ConnReadCallback_t& func) { m_connReadFunc = func; }
@@ -54,6 +50,13 @@ namespace tpush
         void deleteConnection(Connection* conn);
         void deleteConnectionInLoop(Connection* conn);
 
+        void onConnRead(Connection* conn, const char* buffer, int bufferLen);
+        void onConnWriteOver(Connection* conn);
+        void onConnError(Connection* conn);
+        void onConnClose(Connection* conn);
+    
+        void onConnEvent(Connection* conn, Connection::Event event, const char* buffer, int bufferLen);
+
     private:
         Acceptor* m_acceptor;
 
@@ -67,7 +70,7 @@ namespace tpush
         std::vector<Connection*> m_connections;
     
         int m_maxConnections;
-        int m_curConnections;
+        volatile int m_curConnections;
     
         SpinLock m_lock;
 
