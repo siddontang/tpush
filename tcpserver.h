@@ -25,7 +25,7 @@ namespace tpush
         TcpServer(int acceptLoopNum, int connLoopNum, int maxConnections);
         ~TcpServer();
       
-        typedef std::tr1::function<void (Connection*, Connection::Event)> ConnEventCallback_t;
+        typedef std::tr1::function<void (Connection*, Connection::Event, const char*, int)> ConnEventCallback_t;
         int listen(const Address& addr, const ConnEventCallback_t& func);
        
         void setConnLoopIOInterval(int milliseconds);
@@ -44,7 +44,7 @@ namespace tpush
         void deleteConnection(Connection* conn);
         void deleteConnectionInLoop(Connection* conn);
 
-        void onConnEvent(const ConnEventCallback_t& FUNC, Connection* conn, Connection::Event event);
+        void onConnEvent(const ConnEventCallback_t& FUNC, Connection* conn, Connection::Event event, const char* buffer, int count);
 
     private:
         Acceptor* m_acceptor;

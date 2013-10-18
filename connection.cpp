@@ -16,19 +16,16 @@ namespace tpush
 
     static int MaxReadBuffer = 4096;
 
-    static void dummyConnFunc(Connection* conn, Connection::Event event)
+    static void dummyConnFunc(Connection*, Connection::Event, const char*, int)
     {
-        (void)conn;
-        (void)event;
     }
 
     Connection::Connection(IOLoop* loop, int sockFd)
+        : m_loop(loop)
     {
-        m_loop = loop;
-
         m_status = Connecting;
 
-        m_func = std::tr1::bind(&dummyConnFunc, _1, _2);
+        m_func = std::tr1::bind(&dummyConnFunc, _1, _2, _3, _4);
         
         ev_io_init(&m_io, Connection::onData, sockFd, EV_READ);
     }
@@ -50,6 +47,8 @@ namespace tpush
         m_io.data = this;
     
         ev_io_start(m_loop->evloop(), &m_io);
+    
+        m_func(this, EstablishedEvent, NULL, 0);
     }
    
     void Connection::shutDown()
@@ -95,6 +94,11 @@ namespace tpush
 
     void Connection::handleRead()
     {
+        if(m_status != Connected)
+        {
+            return;    
+        }
+
         int sockFd = m_io.fd;
         
         char buf[MaxReadBuffer];
@@ -102,8 +106,7 @@ namespace tpush
         int n = read(sockFd, buf, sizeof(buf));
         if(n > 0)
         {
-            m_recvBuffer.append(buf, n);
-            m_func(this, ReadEvent); 
+            m_func(this, ReadEvent, buf, n); 
             return;
         }
         else if(n == 0)
@@ -132,6 +135,11 @@ namespace tpush
     
     void Connection::handleWrite()
     {
+        if(m_status != Connected)
+        {
+            return;    
+        }
+
         if(m_sendBuffer.empty())
         {
             resetIOEvent(EV_READ);
@@ -146,7 +154,7 @@ namespace tpush
         {
             clearBuffer(m_sendBuffer);
 
-            m_func(this, WriteOverEvent);
+            m_func(this, WriteCompleteEvent, NULL, 0);
 
             resetIOEvent(EV_READ);
 
@@ -178,7 +186,7 @@ namespace tpush
 
     void Connection::handleError()
     {
-        m_func(this, ErrorEvent);
+        m_func(this, ErrorEvent, NULL, 0);
 
         handleClose();
     }
@@ -198,7 +206,7 @@ namespace tpush
 
         m_status = Disconnected;
     
-        m_func(this, CloseEvent);
+        m_func(this, CloseEvent, NULL, 0);
     }
 
     void Connection::send(const char* data, int dataLen)
@@ -257,33 +265,4 @@ namespace tpush
         }
     }
 
-    string Connection::popRecvBuffer(int num)
-    {
-        assert(m_loop->inLoopThread());
-        
-        int recvBufLen = int(m_recvBuffer.size());
-        num = (num > recvBufLen || num <= 0) ? recvBufLen : num;
-
-        if(num == recvBufLen)
-        {
-            string str;
-            m_recvBuffer.swap(str);
-            return str;
-        }
-        else
-        {
-            string str = m_recvBuffer.substr(0, num);
-
-            m_recvBuffer.erase(0, num);
-
-            return str;
-        }
-    }
-
-    void Connection::clearRecvBuffer()
-    {
-        assert(m_loop->inLoopThread());
-
-        clearBuffer(m_recvBuffer);    
-    }
 }

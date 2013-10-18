@@ -19,8 +19,9 @@ namespace tpush
     public:
         enum Event
         {
+            EstablishedEvent,
             ReadEvent,
-            WriteOverEvent,
+            WriteCompleteEvent,
             ErrorEvent,
             CloseEvent,
         };
@@ -39,7 +40,7 @@ namespace tpush
         void onEstablished();
         void shutDown();
 
-        typedef std::tr1::function<void (Connection*, Connection::Event)> ConnectionFunc_t;
+        typedef std::tr1::function<void (Connection*, Connection::Event, const char*, int)> ConnectionFunc_t;
         void setCallback(const ConnectionFunc_t& func) { m_func = func; }
 
         void send(const char* data, int dataLen);
@@ -50,13 +51,10 @@ namespace tpush
         int getSockFd() { return m_io.fd; }
 
         IOLoop* getLoop() { return m_loop; }
-
-        //not thread safe, must use in thread loop
-        std::string& getRecvBuffer() { return m_recvBuffer; }
-        
-        //num = 0 for pop all
-        std::string popRecvBuffer(int num = 0);
-        void clearRecvBuffer();
+  
+        typedef std::tr1::shared_ptr<void> UserData_t; 
+        void setUserData(const UserData_t& data) { m_userData = data; }
+        UserData_t getUserData() { return m_userData; } 
 
     private:
         static void onData(struct ev_loop*, struct ev_io*, int);
@@ -81,7 +79,7 @@ namespace tpush
 
         std::string m_sendBuffer;
 
-        std::string m_recvBuffer;
+        std::tr1::shared_ptr<void>  m_userData;
     };    
 }
 

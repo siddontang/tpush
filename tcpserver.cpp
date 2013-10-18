@@ -72,9 +72,11 @@ namespace tpush
         loop->runTask(std::tr1::bind(&TcpServer::newConnectionInLoop, this, loop, sockFd, func));
     }
 
-    void TcpServer::onConnEvent(const ConnEventCallback_t& func, Connection* conn, Connection::Event event)
+    void TcpServer::onConnEvent(const ConnEventCallback_t& func, Connection* conn, 
+                                Connection::Event event,
+                                const char* buffer, int count)
     {
-        func(conn, event);
+        func(conn, event, buffer, count);
 
         if(event == Connection::CloseEvent)
         {
@@ -91,7 +93,7 @@ namespace tpush
             m_connections[sockFd] = conn;    
         }    
 
-        conn->setCallback(std::tr1::bind(&TcpServer::onConnEvent, this, func, _1, _2));
+        conn->setCallback(std::tr1::bind(&TcpServer::onConnEvent, this, func, _1, _2, _3, _4));
 
         conn->onEstablished();
     }
