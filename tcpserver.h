@@ -24,8 +24,9 @@ namespace tpush
     public:
         TcpServer(int acceptLoopNum, int connLoopNum, int maxConnections);
         ~TcpServer();
-
-        int listen(const Address& addr);
+      
+        typedef std::tr1::function<void (Connection*, Connection::Event)> ConnEventCallback_t;
+        int listen(const Address& addr, const ConnEventCallback_t& func);
        
         void setConnLoopIOInterval(int milliseconds);
         
@@ -35,27 +36,15 @@ namespace tpush
         void start();
         void stop();
 
-        typedef std::tr1::function<void (Connection*, const char*, int)> ConnReadCallback_t;
-        void setConnReadCallback(const ConnReadCallback_t& func) { m_connReadFunc = func; }
-
-        typedef std::tr1::function<void (Connection*)> ConnCallback_t;
-        void setConnWriteOverCallback(const ConnCallback_t& func) { m_connWriteOverFunc = func; }
-        void setConnErrorCallback(const ConnCallback_t& func) { m_connErrorFunc = func; }
-        void setConnCloseCallback(const ConnCallback_t& func) { m_connCloseFunc = func; }
-
     private:
-        void onNewConnection(int sockFd);
+        void onNewConnection(int sockFd, const ConnEventCallback_t& func);
 
-        void newConnectionInLoop(IOLoop* loop, int sockFd);
+        void newConnectionInLoop(IOLoop* loop, int sockFd, const ConnEventCallback_t& func);
+
         void deleteConnection(Connection* conn);
         void deleteConnectionInLoop(Connection* conn);
 
-        void onConnRead(Connection* conn, const char* buffer, int bufferLen);
-        void onConnWriteOver(Connection* conn);
-        void onConnError(Connection* conn);
-        void onConnClose(Connection* conn);
-    
-        void onConnEvent(Connection* conn, Connection::Event event, const char* buffer, int bufferLen);
+        void onConnEvent(const ConnEventCallback_t& FUNC, Connection* conn, Connection::Event event);
 
     private:
         Acceptor* m_acceptor;
@@ -73,11 +62,6 @@ namespace tpush
         volatile int m_curConnections;
     
         SpinLock m_lock;
-
-        ConnReadCallback_t m_connReadFunc;
-        ConnCallback_t m_connWriteOverFunc;
-        ConnCallback_t m_connErrorFunc;
-        ConnCallback_t m_connCloseFunc;
     };
         
 }

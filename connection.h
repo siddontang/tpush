@@ -39,7 +39,7 @@ namespace tpush
         void onEstablished();
         void shutDown();
 
-        typedef std::tr1::function<void (Connection*, Connection::Event, char*, int)> ConnectionFunc_t;
+        typedef std::tr1::function<void (Connection*, Connection::Event)> ConnectionFunc_t;
         void setCallback(const ConnectionFunc_t& func) { m_func = func; }
 
         void send(const char* data, int dataLen);
@@ -50,6 +50,13 @@ namespace tpush
         int getSockFd() { return m_io.fd; }
 
         IOLoop* getLoop() { return m_loop; }
+
+        //not thread safe, must use in thread loop
+        std::string& getRecvBuffer() { return m_recvBuffer; }
+        
+        //num = 0 for pop all
+        std::string popRecvBuffer(int num = 0);
+        void clearRecvBuffer();
 
     private:
         static void onData(struct ev_loop*, struct ev_io*, int);
@@ -68,11 +75,13 @@ namespace tpush
 
         struct ev_io m_io;
 
+        Status m_status;
+        
         ConnectionFunc_t m_func;
 
-        Status m_status;
-
         std::string m_sendBuffer;
+
+        std::string m_recvBuffer;
     };    
 }
 

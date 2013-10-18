@@ -97,9 +97,10 @@ namespace tpush
         if(sockFd < 0)
         {
             int err = errno;
-            LOG_ERROR("accept error ", errorMsg(err));
             if(err == EMFILE || err == ENFILE)
             {
+                LOG_ERROR("accept error ", errorMsg(err));
+             
                 //we may do later   
                 close(acceptLoop->m_dummyFd);
                 sockFd = accept(w->fd, NULL, NULL);
@@ -111,6 +112,8 @@ namespace tpush
         }    
 
         SockUtil::setNonBlockingAndCloseOnExec(sockFd);
+        SockUtil::setKeepAlive(sockFd, true);
+        
         (watcher->func)(sockFd);
     }
 }
