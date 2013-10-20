@@ -10,11 +10,14 @@ extern "C"
 #include <ev.h>    
 }
 
+#include "nocopyable.h"
+
 namespace tpush
 {
     class IOLoop;
 
-    class Connection
+    class Connection : public nocopyable
+                     , public std::tr1::enable_shared_from_this<Connection> 
     {
     public:
         enum Event
@@ -40,7 +43,9 @@ namespace tpush
         void onEstablished();
         void shutDown();
 
-        typedef std::tr1::function<void (Connection*, Connection::Event, const char*, int)> ConnectionFunc_t;
+        typedef std::tr1::shared_ptr<Connection> ConnectionPtr_t;
+
+        typedef std::tr1::function<void (const ConnectionPtr_t&, Connection::Event, const char*, int)> ConnectionFunc_t;
         void setCallback(const ConnectionFunc_t& func) { m_func = func; }
 
         void send(const char* data, int dataLen);
@@ -55,6 +60,7 @@ namespace tpush
         typedef std::tr1::shared_ptr<void> UserData_t; 
         void setUserData(const UserData_t& data) { m_userData = data; }
         UserData_t getUserData() { return m_userData; } 
+        void resetUserData() { m_userData.reset(); }
 
     private:
         static void onData(struct ev_loop*, struct ev_io*, int);

@@ -25,7 +25,9 @@ namespace tpush
         TcpServer(int acceptLoopNum, int connLoopNum, int maxConnections);
         ~TcpServer();
       
-        typedef std::tr1::function<void (Connection*, Connection::Event, const char*, int)> ConnEventCallback_t;
+        typedef std::tr1::shared_ptr<Connection> ConnectionPtr_t;
+        typedef std::tr1::function<void (const ConnectionPtr_t&, Connection::Event, const char*, int)> ConnEventCallback_t;
+      
         int listen(const Address& addr, const ConnEventCallback_t& func);
        
         void setConnLoopIOInterval(int milliseconds);
@@ -41,10 +43,12 @@ namespace tpush
 
         void newConnectionInLoop(IOLoop* loop, int sockFd, const ConnEventCallback_t& func);
 
-        void deleteConnection(Connection* conn);
-        void deleteConnectionInLoop(Connection* conn);
+        void deleteConnection(ConnectionPtr_t conn);
+        void deleteConnectionInLoop(ConnectionPtr_t conn);
 
-        void onConnEvent(const ConnEventCallback_t& FUNC, Connection* conn, Connection::Event event, const char* buffer, int count);
+        void onConnEvent(const ConnEventCallback_t& func, 
+                         const ConnectionPtr_t& conn, 
+                         Connection::Event event, const char* buffer, int count);
 
     private:
         Acceptor* m_acceptor;
@@ -56,7 +60,7 @@ namespace tpush
 
         Signaler* m_signaler;
 
-        std::vector<Connection*> m_connections;
+        std::vector<ConnectionPtr_t> m_connections;
     
         int m_maxConnections;
         volatile int m_curConnections;

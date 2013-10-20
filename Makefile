@@ -10,11 +10,11 @@ UNAME_S = $(shell uname -s)
 EV_INC = -I/usr/local/include
 EV_LIB = -L/usr/local/lib 
 
-DEBUG ?= 0
+USE_DEUBG ?= 0
 
-CCFLAGS = -Wall $(EV_INC)
+CCFLAGS = -Wall $(EV_INC) -DHTTP_PARSER_STRICT=0
 
-ifeq ($(DEBUG), 1)
+ifeq ($(USE_DEBUG), 1)
 	CCFLAGS += -g -ggdb -DDEBUG
 else
 	CCFLAGS += -O2 -DNDEBUG

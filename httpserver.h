@@ -16,6 +16,7 @@ namespace tpush
     class TcpServer;
     class Address;
     class HttpConnection;
+    class HttpRequest;
 
     class HttpServer : public nocopyable
     {
@@ -31,16 +32,22 @@ namespace tpush
 
         int listen(const Address& addr);
     
-        typedef std::tr1::function<void (HttpConnection*)> HttpRequestCallback_t;
+        typedef std::tr1::shared_ptr<Connection> ConnectionPtr_t;
+        typedef std::tr1::shared_ptr<HttpConnection> HttpConnectionPtr_t;
+        typedef std::tr1::shared_ptr<HttpRequest> HttpRequestPtr_t;
+
+        typedef std::tr1::function<void (const ConnectionPtr_t&, const HttpRequestPtr_t&)> HttpRequestCallback_t;
+
         void setRequestCallback(const HttpRequestCallback_t& func) { m_func = func; }
+        HttpRequestCallback_t& getRequestCallback() { return m_func; }
            
     private:
-        void onConnEvent(Connection*, Connection::Event, const char*, int);
+        void onConnEvent(const ConnectionPtr_t&, Connection::Event, const char*, int);
 
-        void onConnRead(Connection*, const char*, int);
-        void onConnWriteComplete(Connection*);
-        void onConnClose(Connection*);
-        void onConnError(Connection*);
+        void onConnRead(const ConnectionPtr_t&, const char*, int);
+        void onConnWriteComplete(const ConnectionPtr_t&);
+        void onConnClose(const ConnectionPtr_t&);
+        void onConnError(const ConnectionPtr_t&);
 
     private:
         TcpServer* m_server;

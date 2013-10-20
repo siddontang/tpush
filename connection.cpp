@@ -16,7 +16,9 @@ namespace tpush
 
     static int MaxReadBuffer = 4096;
 
-    static void dummyConnFunc(Connection*, Connection::Event, const char*, int)
+    typedef std::tr1::shared_ptr<Connection> ConnectionPtr_t;
+
+    static void dummyConnFunc(const ConnectionPtr_t&, Connection::Event, const char*, int)
     {
     }
 
@@ -32,7 +34,7 @@ namespace tpush
 
     Connection::~Connection()
     {
-            
+        LOG_INFO("connection destoryed");            
     }   
    
     void Connection::onEstablished()
@@ -48,7 +50,7 @@ namespace tpush
     
         ev_io_start(m_loop->evloop(), &m_io);
     
-        m_func(this, EstablishedEvent, NULL, 0);
+        m_func(shared_from_this(), EstablishedEvent, NULL, 0);
     }
    
     void Connection::shutDown()
@@ -104,9 +106,12 @@ namespace tpush
         char buf[MaxReadBuffer];
 
         int n = read(sockFd, buf, sizeof(buf));
+
+        //LOG_INFO("read %d %s", n, string(buf, n).c_str());
+
         if(n > 0)
         {
-            m_func(this, ReadEvent, buf, n); 
+            m_func(shared_from_this(), ReadEvent, buf, n); 
             return;
         }
         else if(n == 0)
@@ -124,6 +129,7 @@ namespace tpush
                  
             handleError();
             LOG_ERROR("socket %d readData Error %s", sockFd, errorMsg(err));
+            return;
         }
     }
 
@@ -154,7 +160,7 @@ namespace tpush
         {
             clearBuffer(m_sendBuffer);
 
-            m_func(this, WriteCompleteEvent, NULL, 0);
+            m_func(shared_from_this(), WriteCompleteEvent, NULL, 0);
 
             resetIOEvent(EV_READ);
 
@@ -175,6 +181,8 @@ namespace tpush
                 handleError();
                 
                 LOG_ERROR("socket %d writeData Error %s", sockFd, errorMsg(err));
+            
+                return;
             }
         }
         
@@ -186,7 +194,7 @@ namespace tpush
 
     void Connection::handleError()
     {
-        m_func(this, ErrorEvent, NULL, 0);
+        m_func(shared_from_this(), ErrorEvent, NULL, 0);
 
         handleClose();
     }
@@ -206,7 +214,7 @@ namespace tpush
 
         m_status = Disconnected;
     
-        m_func(this, CloseEvent, NULL, 0);
+        m_func(shared_from_this(), CloseEvent, NULL, 0);
     }
 
     void Connection::send(const char* data, int dataLen)

@@ -6,6 +6,8 @@
 
 #include "httpserver.h"
 #include "connection.h"
+#include "httprequest.h"
+
 #include "log.h"
 
 using namespace std;
@@ -13,22 +15,26 @@ using namespace std;
 namespace tpush
 {
 
-    HttpConnection::HttpConnection(Connection* conn, HttpServer* server)
+    HttpConnection::HttpConnection(const ConnectionPtr_t& conn, HttpServer* server)
         : m_conn(conn)
         , m_server(server)
+        , m_request(new HttpRequest())
+        , m_lastWasValue(true)
+        , m_eof(false)
     {
         resetParser();
     }
 
     HttpConnection::~HttpConnection()
     {
-       LOG_INFO("HttpConnection destoryed"); 
     }
 
     void HttpConnection::resetParser()
     {
         memset(&m_parser, 0, sizeof(m_parser));
         http_parser_init(&m_parser, HTTP_REQUEST); 
+        
+        m_parser.data = this;
     }
 
     void HttpConnection::initParserSettings(struct http_parser_settings* settings)
@@ -95,11 +101,19 @@ namespace tpush
      
     int HttpConnection::handleMessageBegin()
     {
+        m_eof = false;
+        m_request->clear();
         return 0;    
     }
         
     int HttpConnection::handleUrl(const char* at, size_t length)
     {
+        if(!validHeaderSize())
+        {
+            return -1;    
+        }
+
+        m_request->url.append(at, length);
         return 0;
     }
      
@@ -110,11 +124,33 @@ namespace tpush
         
     int HttpConnection::handleHeaderField(const char* at, size_t length)
     {
+        if(!validHeaderSize())
+        {
+            return -1;    
+        }
+
+        if(m_lastWasValue)
+        {
+            m_curField.clear();    
+        }
+
+        m_curField.append(at, length);
+
+        m_lastWasValue = 0;
+
         return 0;
     }
         
     int HttpConnection::handleHeaderValue(const char* at, size_t length)
     {
+        if(!validHeaderSize())
+        {
+            return -1;    
+        }
+
+        m_request->headers[m_curField].append(at, length);
+        m_lastWasValue = 1;
+
         return 0;
     }
         
@@ -125,11 +161,37 @@ namespace tpush
         
     int HttpConnection::handleBody(const char* at, size_t length)
     {
+        if(m_request->body.size() > (uint64_t)m_server->getMaxBodySize())
+        {
+            return -1;    
+        }
+
+
+        m_request->body.append(at, length);
         return 0;
     }
         
     int HttpConnection::handleMessageComplete()
     {
+        m_request->majorVersion = m_parser.http_major;
+        m_request->minorVersion = m_parser.http_minor;
+        m_request->method = m_parser.method;
+
+        m_eof = true;
+        
+        ConnectionPtr_t conn = m_conn.lock();
+        if(!conn)
+        {
+            return -1;
+        }
+
+        (m_server->getRequestCallback())(conn, m_request);
+        resetParser();
         return 0;
+    }
+
+    bool HttpConnection::validHeaderSize()
+    {
+        return (m_parser.nread <= (uint32_t)m_server->getMaxHeaderSize());
     }
 }

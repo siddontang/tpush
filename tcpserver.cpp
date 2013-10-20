@@ -51,7 +51,7 @@ namespace tpush
 
         delete m_mainLoop;
     
-        clearContainer(m_connections);
+        m_connections.clear();
     }
 
     void TcpServer::onNewConnection(int sockFd, const ConnEventCallback_t& func)
@@ -72,7 +72,8 @@ namespace tpush
         loop->runTask(std::tr1::bind(&TcpServer::newConnectionInLoop, this, loop, sockFd, func));
     }
 
-    void TcpServer::onConnEvent(const ConnEventCallback_t& func, Connection* conn, 
+    void TcpServer::onConnEvent(const ConnEventCallback_t& func, 
+                                const ConnectionPtr_t& conn, 
                                 Connection::Event event,
                                 const char* buffer, int count)
     {
@@ -86,19 +87,20 @@ namespace tpush
 
     void TcpServer::newConnectionInLoop(IOLoop* loop, int sockFd, const ConnEventCallback_t& func)
     {
-        Connection* conn = m_connections[sockFd];
-        if(!conn)
+        ConnectionPtr_t conn = m_connections[sockFd];
+        LOG_INFO("newConnection %d", bool(conn));
+        if(!bool(conn))
         {
-            conn = new Connection(loop, sockFd);
+            conn = ConnectionPtr_t(new Connection(loop, sockFd));
             m_connections[sockFd] = conn;    
-        }    
+        }
 
         conn->setCallback(std::tr1::bind(&TcpServer::onConnEvent, this, func, _1, _2, _3, _4));
 
         conn->onEstablished();
     }
 
-    void TcpServer::deleteConnection(Connection* conn)
+    void TcpServer::deleteConnection(ConnectionPtr_t conn)
     {
         IOLoop* loop = conn->getLoop();
 
@@ -112,7 +114,7 @@ namespace tpush
         }
     }
 
-    void TcpServer::deleteConnectionInLoop(Connection* conn)
+    void TcpServer::deleteConnectionInLoop(ConnectionPtr_t conn)
     {
         IOLoop* loop = conn->getLoop();
 
@@ -120,8 +122,8 @@ namespace tpush
         (void)loop;
 
         int sockFd = conn->getSockFd();
-        delete conn;
-        m_connections[sockFd] = NULL;
+        
+        m_connections[sockFd].reset();
 
         __sync_sub_and_fetch(&m_curConnections, 1);
     }
