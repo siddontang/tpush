@@ -71,8 +71,6 @@ namespace tpush
         struct http_parser* parser = c->getParser();
 
         int n = http_parser_execute(parser, &m_parserSettings, buffer, count);
-
-        LOG_INFO("execute %d %d %s", n, count, string(buffer, count).c_str());
       
         do
         {

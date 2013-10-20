@@ -57,7 +57,6 @@ namespace tpush
     void TcpServer::onNewConnection(int sockFd, const ConnEventCallback_t& func)
     {
         int connNum = __sync_add_and_fetch(&m_curConnections, 1);
-        LOG_INFO("cur conn number %d", connNum);
 
         if(connNum > m_maxConnections)
         {
@@ -88,7 +87,6 @@ namespace tpush
     void TcpServer::newConnectionInLoop(IOLoop* loop, int sockFd, const ConnEventCallback_t& func)
     {
         ConnectionPtr_t conn = m_connections[sockFd];
-        LOG_INFO("newConnection %d", bool(conn));
         if(!bool(conn))
         {
             conn = ConnectionPtr_t(new Connection(loop, sockFd));
@@ -137,8 +135,9 @@ namespace tpush
    
     void TcpServer::setConnLoopIOInterval(int milliseconds)
     {
-        vector<IOLoop*> loops = m_connLoops->getLoops();
-        for(size_t i = 0; loops.size(); i++)
+        vector<IOLoop*>& loops = m_connLoops->getLoops();
+        
+        for(size_t i = 0; i < loops.size(); i++)
         {
             loops[i]->setIOInterval(milliseconds);    
         }

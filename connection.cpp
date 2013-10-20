@@ -34,7 +34,6 @@ namespace tpush
 
     Connection::~Connection()
     {
-        LOG_INFO("connection destoryed");            
     }   
    
     void Connection::onEstablished()
