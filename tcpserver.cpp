@@ -16,7 +16,7 @@
 #include "log.h"
 #include "acceptor.h"
 #include "signaler.h"
-
+#include "connpooltimer.h"
 #include "connection.h"
 
 using namespace std;
@@ -24,6 +24,8 @@ using namespace std::tr1::placeholders;
 
 namespace tpush
 {
+    const int DefaultConnCheckerInterval = 60 * 1000;
+
     TcpServer::TcpServer(int acceptLoopNum, int connLoopNum, int maxConnections)
     {
         assert(maxConnections > 0);
@@ -34,6 +36,8 @@ namespace tpush
         m_connLoops = new IOLoopThreadPool(connLoopNum);
    
         m_signaler = new Signaler(m_mainLoop);
+
+        m_connChecker = new ConnPoolTimer(m_connLoops, std::tr1::bind(&TcpServer::onConnCheck, this, _1), DefaultConnCheckerInterval);
 
         m_maxConnections = maxConnections;
         m_curConnections = 0;
@@ -46,6 +50,7 @@ namespace tpush
     
     TcpServer::~TcpServer()
     {
+        delete m_connChecker;
         delete m_connLoops;
         delete m_acceptor;
 
@@ -146,11 +151,24 @@ namespace tpush
     void TcpServer::addSignal(int signum, const SignalFunc_t& func)
     {
         m_signaler->add(signum, func);   
-    } 
+    }
+
+    void TcpServer::setConnCheckerInterval(int milliseconds)
+    {
+        m_connChecker->reset(milliseconds);    
+    }
     
+    void TcpServer::onConnCheck(IOLoop* loop)
+    {
+        LOG_INFO("onConnCheck"); 
+    }
+
     void TcpServer::start()
     {
         m_connLoops->start();
+
+        m_connChecker->start();
+
         m_acceptor->start();
 
         m_mainLoop->start();
@@ -162,6 +180,7 @@ namespace tpush
     
         m_acceptor->stop();
     
+        m_connChecker->stop();
         m_connLoops->stop();
     
         m_mainLoop->stop();

@@ -11,10 +11,14 @@
 using namespace std;
 using namespace std::tr1::placeholders;
 
+#ifndef CONN_TIMEOUT
+#define CONN_TIMEOUT 120
+#endif
+
 namespace tpush
 {
 
-    static int MaxReadBuffer = 4096;
+    static int MaxReadBuffer = 1024 * 4;
 
     typedef std::tr1::shared_ptr<Connection> ConnectionPtr_t;
 
@@ -44,6 +48,8 @@ namespace tpush
         }
 
         m_status = Connected;
+
+        updateTime();
 
         m_io.data = this;
     
@@ -106,11 +112,13 @@ namespace tpush
 
         int n = read(sockFd, buf, sizeof(buf));
 
-        //LOG_INFO("read %d %s", n, string(buf, n).c_str());
 
         if(n > 0)
         {
             m_func(shared_from_this(), ReadEvent, buf, n); 
+            
+            updateTime();
+
             return;
         }
         else if(n == 0)
@@ -127,7 +135,6 @@ namespace tpush
             }
                  
             handleError();
-            LOG_ERROR("socket %d readData Error %s", sockFd, errorMsg(err));
             return;
         }
     }
@@ -163,6 +170,8 @@ namespace tpush
 
             resetIOEvent(EV_READ);
 
+            updateTime();
+
             return;
         }
         else if(n < 0)
@@ -178,8 +187,6 @@ namespace tpush
                 clearBuffer(m_sendBuffer);
 
                 handleError();
-                
-                LOG_ERROR("socket %d writeData Error %s", sockFd, errorMsg(err));
             
                 return;
             }
@@ -189,6 +196,8 @@ namespace tpush
         resetIOEvent(EV_READ | EV_WRITE);
 
         m_sendBuffer = m_sendBuffer.substr(n);
+
+        updateTime();
     }
 
     void Connection::handleError()
@@ -272,4 +281,14 @@ namespace tpush
         }
     }
 
+
+    void Connection::updateTime()
+    {
+        m_lastUpdate = ev_now(m_loop->evloop());    
+    }
+
+    bool Connection::expired()
+    {
+        return (ev_now(m_loop->evloop()) - m_lastUpdate) > CONN_TIMEOUT;   
+    }
 }

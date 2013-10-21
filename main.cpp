@@ -33,9 +33,11 @@ void onHandler(const ConnectionPtr_t& conn, const HttpRequestPtr_t& request)
 {
     HttpResponse resp;
     resp.statusCode = 200;
-    resp.headers["Content-Type"] = "text/html";
-    resp.headers["Connection"] = "keep-alive";
-    resp.body = "Hello World";
+    resp.setContentType("text/html");
+    resp.setKeepAlive(true);
+    resp.enableDate();
+    
+    resp.body.resize(1600);
 
     conn->send(resp.dump());
 }
@@ -44,7 +46,9 @@ int main()
 {
     //Log::rootLog().setLevel(Log::ERROR);
      
-    TcpServer s(1, 1, 100);
+    TcpServer s(1, 10, 10000);
+
+    //s.setConnLoopIOInterval(50);
     
     HttpServer httpd(&s);
 

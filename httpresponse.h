@@ -15,6 +15,11 @@ namespace tpush
         HttpResponse(int code, const Headers_t& headers, const std::string& body = "");
         ~HttpResponse();    
 
+        void setContentType(const std::string& contentType);
+        void setKeepAlive(bool on);
+
+        void enableDate();
+
         //generate http response text
         std::string dump();
    

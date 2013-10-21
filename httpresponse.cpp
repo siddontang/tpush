@@ -1,6 +1,8 @@
 #include "httpresponse.h"
 
 #include <string.h>
+#include <stdio.h>
+#include <time.h>
 
 #include "httputil.h"
 
@@ -56,5 +58,31 @@ namespace tpush
 
         return str;
     }     
+
+    void HttpResponse::setContentType(const std::string& contentType)
+    {
+        headers["Content-Type"] = contentType;    
+    }
+
+    void HttpResponse::setKeepAlive(bool on)
+    {
+        if(on)
+        {
+            headers["Connection"] = "Keep-Alive";    
+        }    
+        else
+        {
+            headers["Connection"] = "close";    
+        }
+    }
     
+    void HttpResponse::enableDate()
+    {
+        time_t now = time(NULL);
+        struct tm t; 
+        gmtime_r(&now, &t);
+        char buf[128];
+        strftime(buf, sizeof buf, "%a, %d %b %Y %H:%M:%S %Z", &t);
+        headers["Date"] = buf;
+    }
 }

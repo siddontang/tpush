@@ -99,8 +99,6 @@ namespace tpush
             int err = errno;
             if(err == EMFILE || err == ENFILE)
             {
-                LOG_ERROR("accept error ", errorMsg(err));
-             
                 //we may do later   
                 close(acceptLoop->m_dummyFd);
                 sockFd = accept(w->fd, NULL, NULL);
