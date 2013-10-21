@@ -2,6 +2,7 @@
 #define _TIMER_H_
 
 #include <tr1/functional>
+#include <tr1/memory>
 
 extern "C"
 {
@@ -28,6 +29,11 @@ namespace tpush
 
         void reset(int repeat);
 
+        typedef std::tr1::shared_ptr<void> UserData_t;
+        void setUserData(const UserData_t& udata) { m_userData = udata; }
+        UserData_t getUserData() { return m_userData; }
+        void resetUserData() { m_userData.reset(); }
+
     private:
         void startInLoop();
         void stopInLoop();
@@ -37,15 +43,10 @@ namespace tpush
 
     private:
         IOLoop* m_loop;
+        struct ev_timer m_timer;
+        TimerFunc_t m_func;
 
-        class Watcher
-        {
-        public:
-            struct ev_timer timer;
-            TimerFunc_t func;
-        };
-    
-        Watcher m_watcher;
+        UserData_t m_userData;
     };
     
 }
