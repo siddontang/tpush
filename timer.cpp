@@ -5,11 +5,11 @@
 namespace tpush
 {
 
-    Timer::Timer(IOLoop* loop, const TimerFunc_t& func, int milliseconds)
+    Timer::Timer(IOLoop* loop, const TimerFunc_t& func, int repeat, int after)
         : m_loop(loop)
     {
         m_watcher.func = func;
-        ev_timer_init(&(m_watcher.timer), Timer::onTimer, 0, (ev_tstamp)(milliseconds / 1000.0));         
+        ev_timer_init(&(m_watcher.timer), Timer::onTimer, (ev_tstamp)(after / 1000.0), (ev_tstamp)(repeat / 1000.0));         
     }
 
     Timer::~Timer()
@@ -63,9 +63,9 @@ namespace tpush
         ev_timer_stop(m_loop->evloop(), &m_watcher.timer);    
     }
 
-    void Timer::resetInLoop(int milliseconds)
+    void Timer::resetInLoop(int repeat)
     {
-        m_watcher.timer.repeat = milliseconds / 1000.0;
+        m_watcher.timer.repeat = repeat / 1000.0;
         
         ev_timer_again(m_loop->evloop(), &m_watcher.timer); 
             
@@ -75,6 +75,6 @@ namespace tpush
     {
         Watcher* watcher = (Watcher*)w;
         
-        (watcher->func)((IOLoop*)(ev_userdata(loop)));    
+        (watcher->func)();    
     }
 }

@@ -17,16 +17,16 @@ namespace tpush
     class Timer : public nocopyable
     {
     public:
-        typedef std::tr1::function<void (IOLoop*)> TimerFunc_t;
+        typedef std::tr1::function<void ()> TimerFunc_t;
 
-        //milliseconds is Timer interval 
-        Timer(IOLoop* loop, const TimerFunc_t& func, int milliseconds);
+        //repeat and after are milliseconds
+        Timer(IOLoop* loop, const TimerFunc_t& func, int repeat, int after = 0);
         ~Timer();
         
         void start();
         void stop();
 
-        void reset(int milliseconds);
+        void reset(int repeat);
 
     private:
         void startInLoop();

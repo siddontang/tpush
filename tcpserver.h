@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <tr1/functional>
+#include <tr1/memory>
 
 #include "nocopyable.h"
 #include "address.h"
@@ -18,7 +19,8 @@ namespace tpush
     class Signaler;
     class Acceptor;
     class Connection;
-    class ConnPoolTimer;
+
+    class Timer;
 
     class TcpServer : public nocopyable
     {
@@ -32,7 +34,8 @@ namespace tpush
         int listen(const Address& addr, const ConnEventCallback_t& func);
        
         void setConnLoopIOInterval(int milliseconds);
-        void setConnCheckerInterval(int milliseconds);
+        void setConnCheckInterval(int milliseconds);
+        void setConnCheckNumOneLoop(int checkNum);
         void setMaxConnTimeout(int seconds) { m_maxConnTimeout = seconds; }
 
         typedef std::tr1::function<void (int)> SignalFunc_t;
@@ -53,15 +56,18 @@ namespace tpush
                          const ConnectionPtr_t& conn, 
                          Connection::Event event, const char* buffer, int count);
 
-        void onConnCheck(IOLoop* loop);
+        void initConnCheck();
+        void startConnCheck();
+        void stopConnCheck();
+        void onConnCheck(IOLoop* loop, const std::tr1::shared_ptr<void>& content);
 
     private:
         Acceptor* m_acceptor;
 
         //threads for handle connections
         IOLoopThreadPool* m_connLoops;
-   
-        ConnPoolTimer* m_connChecker;
+    
+        std::vector<Timer*> m_connChecker;
     
         IOLoop* m_mainLoop;
 
@@ -73,6 +79,7 @@ namespace tpush
         volatile int m_curConnections;
     
         int m_maxConnTimeout;
+        int m_connCheckNum;
 
         SpinLock m_lock;
     };

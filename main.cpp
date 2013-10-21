@@ -46,9 +46,10 @@ int main()
 {
     //Log::rootLog().setLevel(Log::ERROR);
      
-    TcpServer s(1, 10, 10000);
+    TcpServer s(1, 1, 10000);
 
     //s.setConnLoopIOInterval(50);
+    s.setMaxConnTimeout(10);
     
     HttpServer httpd(&s);
 

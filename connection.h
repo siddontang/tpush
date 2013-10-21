@@ -57,7 +57,7 @@ namespace tpush
 
         IOLoop* getLoop() { return m_loop; }
   
-        bool expired();
+        ev_tstamp getLastUpdate() { return m_lastUpdate; }
 
         typedef std::tr1::shared_ptr<void> UserData_t; 
         void setUserData(const UserData_t& data) { m_userData = data; }

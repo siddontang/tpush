@@ -286,9 +286,4 @@ namespace tpush
     {
         m_lastUpdate = ev_now(m_loop->evloop());    
     }
-
-    bool Connection::expired()
-    {
-        return (ev_now(m_loop->evloop()) - m_lastUpdate) > CONN_TIMEOUT;   
-    }
 }

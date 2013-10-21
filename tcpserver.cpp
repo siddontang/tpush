@@ -16,15 +16,17 @@
 #include "log.h"
 #include "acceptor.h"
 #include "signaler.h"
-#include "connpooltimer.h"
 #include "connection.h"
+#include "timer.h"
 
 using namespace std;
 using namespace std::tr1::placeholders;
 
 namespace tpush
 {
-    const int DefaultConnCheckerInterval = 60 * 1000;
+    const int DefaultConnCheckInterval = 10 * 1000;
+    const int DefaultConnCheckNum = 2000;
+    const int DefaultConnTimeout = 60;
 
     TcpServer::TcpServer(int acceptLoopNum, int connLoopNum, int maxConnections)
     {
@@ -37,7 +39,7 @@ namespace tpush
    
         m_signaler = new Signaler(m_mainLoop);
 
-        m_connChecker = new ConnPoolTimer(m_connLoops, std::tr1::bind(&TcpServer::onConnCheck, this, _1), DefaultConnCheckerInterval);
+        initConnCheck();
 
         m_maxConnections = maxConnections;
         m_curConnections = 0;
@@ -46,11 +48,16 @@ namespace tpush
    
         //we prealloc connection vector and never change its size
         m_connections.resize(int(m_maxConnections * 1.5) + 1024);
+   
+        m_connCheckNum = DefaultConnCheckNum;
+    
+        m_maxConnTimeout = DefaultConnTimeout;
     }
     
     TcpServer::~TcpServer()
     {
-        delete m_connChecker;
+        clearContainer(m_connChecker);
+
         delete m_connLoops;
         delete m_acceptor;
 
@@ -153,21 +160,88 @@ namespace tpush
         m_signaler->add(signum, func);   
     }
 
-    void TcpServer::setConnCheckerInterval(int milliseconds)
+    void TcpServer::setConnCheckInterval(int milliseconds)
     {
-        m_connChecker->reset(milliseconds);    
+        for(size_t i = 0; i < m_connChecker.size(); ++i)
+        {
+            m_connChecker[i]->reset(milliseconds);    
+        }
     }
     
-    void TcpServer::onConnCheck(IOLoop* loop)
+    void TcpServer::initConnCheck()
     {
-        LOG_INFO("onConnCheck"); 
+        vector<IOLoop*>& loops = m_connLoops->getLoops(); 
+        for(size_t i = 0; i < loops.size(); ++i)
+        {
+            m_connChecker.push_back(new Timer(loops[i], 
+                std::tr1::bind(&TcpServer::onConnCheck, this, loops[i], std::tr1::shared_ptr<int>(new int(0))),
+                DefaultConnCheckInterval, 10 * 1000));    
+        }
+    }
+
+    void TcpServer::startConnCheck()
+    {
+        for(size_t i = 0; i < m_connChecker.size(); ++i)
+        {
+            m_connChecker[i]->start();    
+        }    
+    }
+
+    void TcpServer::stopConnCheck()
+    {
+        for(size_t i = 0; i < m_connChecker.size(); ++i)
+        {
+            m_connChecker[i]->stop();    
+        }    
+    }
+
+    void TcpServer::setConnCheckNumOneLoop(int checkNum)
+    {
+        if(checkNum >= int(m_connections.size()))    
+        {
+            checkNum = int(m_connections.size());    
+        }
+
+        m_connCheckNum = checkNum;
+    }
+
+    void TcpServer::onConnCheck(IOLoop* loop, const std::tr1::shared_ptr<void>& content)
+    {
+        std::tr1::shared_ptr<int> num = std::tr1::static_pointer_cast<int>(content); 
+        
+        int lastIndex = *num;
+
+        int index = lastIndex;
+
+        ev_tstamp now = ev_now(loop->evloop()); 
+
+        for(int i = 0; i < m_connCheckNum; ++i, ++index)
+        {
+            int fd = index % m_connections.size();
+            if(fd  == lastIndex && fd != index)
+            {
+                //travel for a loop
+                break;    
+            }
+
+            if(m_connLoops->getHashLoop(fd) == loop)
+            {
+                ConnectionPtr_t conn = m_connections[fd];
+                if(conn && int(now - conn->getLastUpdate()) > m_maxConnTimeout) 
+                {
+                    conn->shutDown();    
+                }   
+            }
+        }
+
+        *num = index % m_connections.size();
     }
 
     void TcpServer::start()
     {
         m_connLoops->start();
 
-        m_connChecker->start();
+        startConnCheck();
 
         m_acceptor->start();
 
@@ -180,7 +254,8 @@ namespace tpush
     
         m_acceptor->stop();
     
-        m_connChecker->stop();
+        stopConnCheck();
+
         m_connLoops->stop();
     
         m_mainLoop->stop();
