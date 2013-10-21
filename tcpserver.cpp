@@ -175,7 +175,7 @@ namespace tpush
         {
             m_connChecker.push_back(new Timer(loops[i], 
                 std::tr1::bind(&TcpServer::onConnCheck, this, loops[i], std::tr1::shared_ptr<int>(new int(0))),
-                DefaultConnCheckInterval, 10 * 1000));    
+                DefaultConnCheckInterval, DefaultConnTimeout * 1000));    
         }
     }
 
