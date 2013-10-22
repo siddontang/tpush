@@ -215,6 +215,7 @@ pip-log.txt
 .mr.developer.cfg
 
 *.o
-libev
-*.exe
-tpush
+build
+CMakeCache.txt
+cmake_install.cmake
+CMakeFiles
