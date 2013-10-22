@@ -19,16 +19,18 @@ tpush is depended on tnet(a tiny server for high performance network programming
     cmake ..
     make
 
-# some issue I meet, maybe you may meet too!
+# issue
 
-## Pushing to Git returning Error Code 403 fatal: HTTP request failed
+Some issue I meet, maybe you may meet too!
+
+- Pushing to Git returning Error Code 403 fatal: HTTP request failed
 
 I use below to solve:
     
-    git remote set-url origin https://username@github.com/username/tpush.git
+        git remote set-url origin https://username@github.com/username/tpush.git
 
 Then I try push again because network is poor sometimes;
     
-## gitsubmodule 
+- git submodule 
     
 refer [this](http://www.kafeitu.me/git/2012/03/27/git-submodule.html) 
