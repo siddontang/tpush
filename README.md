@@ -26,6 +26,8 @@ tpush is depended on tnet(a tiny server for high performance network programming
 I use below to solve:
     
     git remote set-url origin https://username@github.com/username/tpush.git
+
+Then I try push again because network is poor sometimes;
     
 ## gitsubmodule 
     
