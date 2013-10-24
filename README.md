@@ -19,6 +19,11 @@ tpush is depended on tnet(a tiny server for high performance network programming
     cmake ..
     make
 
+If you want to use tcmalloc and build release version, do below
+
+    cmake .. -DCMAKE_USE_TCMALLOC=1 -DCMAKE_BUILD_TYPE=Release 
+
+
 # issue
 
 Some issue I meet, maybe you may meet too!
