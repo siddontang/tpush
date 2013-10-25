@@ -2,6 +2,10 @@ set(TPUSH_SRCS
     tpush.cpp
     ini.c
     config.cpp
+    pushconnection.cpp
+    channel.cpp
+    pushloop.cpp
+    pushserver.cpp
     )
 
 include_directories(${TPUSH_SOURCE_DIR}/tnet/core)
