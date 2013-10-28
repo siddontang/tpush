@@ -15,6 +15,10 @@ namespace tpush
     int Config::TcpConnLoopNum = 4;
     int Config::TcpMaxConnections = 10000;
 
+    int Config::TcpConnCheckRepeat = 10;
+    int Config::TcpConnCheckStep = 2000;
+    int Config::TcpConnTimeout = 60;
+
     int Config::PushLoopNum = 4;
     int Config::MaxChannelConnectionNum = 10000;
     int Config::MaxChannelMessageReserveNum = 10;

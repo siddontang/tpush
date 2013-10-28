@@ -15,6 +15,10 @@ namespace tpush
         static int TcpConnLoopNum;
         static int TcpMaxConnections;
 
+        static int TcpConnCheckRepeat;
+        static int TcpConnCheckStep;
+        static int TcpConnTimeout;
+
         static int PushLoopNum;
         static int MaxChannelConnectionNum;
         static int MaxChannelMessageReserveNum;

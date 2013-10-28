@@ -23,7 +23,11 @@ namespace tpush
     PushServer::PushServer()
     {
         m_server = new TcpServer(Config::TcpAcceptLoopNum, Config::TcpConnLoopNum, Config::TcpMaxConnections);
-        
+
+        m_server->setConnCheckRepeat(Config::TcpConnCheckRepeat);
+        m_server->setConnCheckStep(Config::TcpConnCheckStep);
+        m_server->setConnTimeout(Config::TcpConnTimeout);
+       
         m_httpPushServer = new HttpPushServer(this);
 
         m_pool = new IOLoopThreadPool(Config::PushLoopNum, "pushloop");    
