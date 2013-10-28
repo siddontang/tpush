@@ -4,6 +4,7 @@
 #include <string>
 #include <set>
 #include <vector>
+#include <map>
 
 #include <stdint.h>
 #include <tr1/functional>
@@ -46,7 +47,7 @@ namespace tpush
     private:
         std::string m_id;    
 
-        typedef std::set<PushConnection> PushConnections_t;
+        typedef std::map<int, PushConnection> PushConnections_t;
         PushConnections_t m_connections;
 
         class PushMessage

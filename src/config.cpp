@@ -7,8 +7,14 @@ extern "C"
 
 #define MATCH(s, n) strcmp(secion, s) == 0 && strcmp(name, n) == 0
 
+using namespace std;
+
 namespace tpush
 {
+    int Config::TcpAcceptLoopNum = 2;
+    int Config::TcpConnLoopNum = 4;
+    int Config::TcpMaxConnections = 10000;
+
     int Config::PushLoopNum = 4;
     int Config::MaxChannelConnectionNum = 10000;
     int Config::MaxChannelMessageReserveNum = 10;
@@ -16,6 +22,14 @@ namespace tpush
     int Config::MaxChannelIdSize = 64;
     int Config::MaxChannelMessageSize = 128;
     int Config::PushLoopCheckRepeat = 30;
+    int Config::PushLoopCheckStep = 2000;
+
+    string Config::HttpListenIp = "0.0.0.0";
+    uint16_t Config::HttpListenPort = 11181;
+    string Config::HttpChannelKey = "id";
+    string Config::HttpSubscribeUrl = "/push/subscribe";
+    string Config::HttpUnsubscribeUrl = "/push/unsubscribe";
+    string Config::HttpPublishUrl = "/push/publish";
 
     static int parseHandler(void* cfg, const char* section, const char* name, const char* value)
     {

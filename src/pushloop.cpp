@@ -4,6 +4,7 @@
 #include "timer.h"
 #include "config.h"
 #include "channel.h"
+#include "log.h"
 
 using namespace tnet;
 using namespace std;
@@ -38,22 +39,39 @@ namespace tpush
     void PushLoop::subscribe(const string& id, const PushConnection& conn)
     {
         vector<string> ids(1, id);
-        subscribe(ids, conn);
+        subscribes(ids, conn);
     }
 
     void PushLoop::unsubscribe(const string& id, const PushConnection& conn)
     {
         vector<string> ids(1, id);
-        unsubscribe(ids, conn);    
+        unsubscribes(ids, conn);    
     }
 
     void PushLoop::publish(const string& id, const string& message)
     {
         vector<string> ids(1, id);
-        publish(ids, message);    
+        publishs(ids, message);    
     }
 
-    void PushLoop::subscribe(const vector<string>& ids, const PushConnection& conn)
+    void PushLoop::subscribes(const vector<string>& ids, const PushConnection& conn)
+    {
+        m_loop->runTask(std::tr1::bind(&PushLoop::subscribesInLoop, this, ids, conn));    
+    }
+
+    void PushLoop::unsubscribes(const vector<string>& ids, const PushConnection& conn)
+    {
+        m_loop->runTask(std::tr1::bind(&PushLoop::unsubscribesInLoop, this, ids, conn));    
+    }
+
+   void PushLoop::publishs(const vector<string>& ids, const string& message)
+    {
+        m_loop->runTask(std::tr1::bind(&PushLoop::publishsInLoop, this, ids, message));    
+    }
+
+
+
+    void PushLoop::subscribesInLoop(const vector<string>& ids, const PushConnection& conn)
     {
         for(size_t i = 0; i < ids.size(); ++i)
         {
@@ -73,7 +91,7 @@ namespace tpush
         }    
     }
 
-    void PushLoop::unsubscribe(const vector<string>& ids, const PushConnection& conn)
+    void PushLoop::unsubscribesInLoop(const vector<string>& ids, const PushConnection& conn)
     {
         for(size_t i = 0; i < ids.size(); ++i)
         {
@@ -82,12 +100,12 @@ namespace tpush
             {
                 continue;    
             }
-
+            
             (iter->second)->unsubscribe(conn);
         }    
     }
 
-    void PushLoop::publish(const vector<string>& ids, const string& message)
+    void PushLoop::publishsInLoop(const vector<string>& ids, const string& message)
     {
         for(size_t i = 0; i < ids.size(); ++i)
         {
@@ -109,13 +127,14 @@ namespace tpush
 
     void PushLoop::onCheck(Timer* timer)
     {
-        if(m_lastCheckIter == m_channels.end())
+        int channelNum = int(m_channels.size());
+        for(int step = 0; step < Config::PushLoopCheckStep && step < channelNum; ++step)
         {
-            m_lastCheckIter = m_channels.begin();    
-        }
-
-        while(m_lastCheckIter != m_channels.end())
-        {
+            if(m_lastCheckIter == m_channels.end())
+            {
+                m_lastCheckIter = m_channels.begin();    
+            }
+            
             Channel* c = m_lastCheckIter->second;
             if(c->empty())
             {

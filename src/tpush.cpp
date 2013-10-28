@@ -1,13 +1,15 @@
-#include "tcpserver.h"
-#include "httpserver.h"
+#include <tr1/memory>
+#include <tr1/functional>
 
-using namespace tnet;
+#include "pushserver.h"
+
+using namespace tpush;
 
 int main()
 {
-    TcpServer s(2, 4, 1000000);
+    PushServer pushServer;
 
-    HttpServer httpd(&s); 
+    pushServer.start();
 
     return 0;    
 }

@@ -6,6 +6,7 @@ set(TPUSH_SRCS
     channel.cpp
     pushloop.cpp
     pushserver.cpp
+    httppushserver.cpp
     )
 
 include_directories(${TPUSH_SOURCE_DIR}/tnet/core)

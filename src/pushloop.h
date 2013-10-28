@@ -30,16 +30,20 @@ namespace tpush
         void stop();
 
         void subscribe(const std::string& id, const PushConnection& conn);
-        void subscribe(const std::vector<std::string>& ids, const PushConnection& conn);
+        void subscribes(const std::vector<std::string>& ids, const PushConnection& conn);
 
         void unsubscribe(const std::string& id, const PushConnection& conn);
-        void unsubscribe(const std::vector<std::string>& ids, const PushConnection& conn);
+        void unsubscribes(const std::vector<std::string>& ids, const PushConnection& conn);
         
         void publish(const std::string& id, const std::string& message); 
-        void publish(const std::vector<std::string>& ids, const std::string& message); 
+        void publishs(const std::vector<std::string>& ids, const std::string& message); 
 
     private:
         void onCheck(tnet::Timer* timer);
+
+        void subscribesInLoop(const std::vector<std::string>& ids, const PushConnection& conn);
+        void unsubscribesInLoop(const std::vector<std::string>& ids, const PushConnection& conn);
+        void publishsInLoop(const std::vector<std::string>& ids, const std::string& message);
 
     private:
         tnet::IOLoop* m_loop;    

@@ -1,6 +1,7 @@
 #include "channel.h"
 
 #include "config.h"
+#include "log.h"
 
 using namespace std;
 using namespace tnet;
@@ -34,7 +35,7 @@ namespace tpush
         for(PushConnections_t::iterator iter = m_connections.begin();
             iter != m_connections.end();)
         {
-            if(!(iter->lock()))
+            if(!(iter->second.lock()))
             {
                 m_connections.erase(iter++);    
             }
@@ -78,12 +79,12 @@ namespace tpush
             }
         }
         
-        m_connections.insert(conn);     
+        m_connections[conn.getSockFd()] = conn;
     }
 
     void Channel::unsubscribe(const PushConnection& conn)
     {
-        m_connections.erase(conn);    
+        m_connections.erase(conn.getSockFd());    
     }
 
     void Channel::publish(const string& message)
@@ -94,10 +95,10 @@ namespace tpush
             for(PushConnections_t::iterator iter = m_connections.begin(); 
                 iter != m_connections.end();)
             {
-                ConnectionPtr_t c = iter->lock();
+                ConnectionPtr_t c = iter->second.lock();
                 if(c)
                 {
-                    pushMessage(c, message, iter->getConnType());    
+                    pushMessage(c, message, iter->second.getConnType());    
                     pushed = true;
                     ++iter;
                 }
@@ -122,7 +123,7 @@ namespace tpush
 
     void Channel::pushMessage(const ConnectionPtr_t& conn, const string& message, PushConnection::ConnType connType)
     {
-        //    
+        PushConnection::push(conn, message, connType);
     }
 
     void Channel::checkMessages()

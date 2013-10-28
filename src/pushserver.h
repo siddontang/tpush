@@ -2,6 +2,7 @@
 #define _PUSHSERVER_H_
 
 #include <vector>
+#include <string>
 #include <tr1/memory>
 #include <tr1/functional>
 
@@ -14,14 +15,19 @@ namespace tnet
     class IOLoopThreadPool;    
     class HttpRequest;
     class Connection;
+    class TcpServer;
 }
 
 namespace tpush
 {
     class PushLoop;
+    class HttpPushServer;
+
     class PushServer : public tnet::nocopyable
     {
     public:
+        friend class HttpPushServer;
+
         typedef std::tr1::shared_ptr<tnet::Connection> ConnectionPtr_t;
 
         PushServer();
@@ -29,12 +35,21 @@ namespace tpush
         
         void start();
         void stop();
-    
-        void onHttpRequest(const tnet::HttpRequest&, const ConnectionPtr_t& conn);
+   
+        tnet::TcpServer* getServer() { return m_server; }
 
     private:
+        PushLoop* getHashLoop(const std::string& channel);
+       
+        typedef std::tr1::function<void (PushLoop*, const std::vector<std::string>&)> DispatchFunc_t;
+        void dispatchChannels(const std::vector<std::string>& ids, const DispatchFunc_t& func);
+
+    private:
+        tnet::TcpServer* m_server;
         tnet::IOLoopThreadPool* m_pool;
-        std::vector<PushLoop*> m_loops;    
+        std::vector<PushLoop*> m_loops;
+        
+        HttpPushServer* m_httpPushServer;    
     };
         
 }

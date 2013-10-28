@@ -2,6 +2,7 @@
 #define _CONFIG_H_
 
 #include <string>
+#include <stdint.h>
 
 namespace tpush
 {
@@ -10,6 +11,10 @@ namespace tpush
     public:
         static int parseFile(const char* file);    
 
+        static int TcpAcceptLoopNum;
+        static int TcpConnLoopNum;
+        static int TcpMaxConnections;
+
         static int PushLoopNum;
         static int MaxChannelConnectionNum;
         static int MaxChannelMessageReserveNum;
@@ -17,6 +22,15 @@ namespace tpush
         static int MaxChannelIdSize;
         static int MaxChannelMessageSize;
         static int PushLoopCheckRepeat;
+        static int PushLoopCheckStep;
+    
+        static std::string HttpListenIp;
+        static uint16_t HttpListenPort;
+        static std::string HttpChannelKey;
+        static std::string HttpSubscribeUrl;
+        static std::string HttpUnsubscribeUrl;
+        static std::string HttpPublishUrl;
+    
     };    
 }
 
