@@ -12,6 +12,7 @@ namespace tnet
     class HttpRequest;
     class Connection;    
     class HttpServer;
+    class HttpResponse;
 }
 
 namespace tpush
@@ -31,8 +32,6 @@ namespace tpush
         void stop();
 
     private:
-        void onRequest(const tnet::HttpRequest&, const ConnectionPtr_t& conn);
-
         void onSubscribe(const tnet::HttpRequest&, const ConnectionPtr_t& conn);
         void onUnsubscribe(const tnet::HttpRequest&, const ConnectionPtr_t& conn);
         void onPublish(const tnet::HttpRequest&, const ConnectionPtr_t& conn);

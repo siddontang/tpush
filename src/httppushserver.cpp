@@ -9,7 +9,6 @@
 #include "log.h"
 #include "misc.h"
 #include "stringutil.h"
-#include "httpurl.h"
 #include "address.h"
 #include "pushserver.h"
 #include "httpurl.h"
@@ -25,8 +24,6 @@ namespace tpush
         : m_server(server)
     {
         m_httpd = new HttpServer(server->getServer());
-    
-        m_httpd->setRequestCallback(std::tr1::bind(&HttpPushServer::onRequest, this, _1, _2));
     }
 
     HttpPushServer::~HttpPushServer()
@@ -37,6 +34,10 @@ namespace tpush
     void HttpPushServer::start()
     {
         PushConnection::setPushFunc(std::tr1::bind(&HttpPushServer::onPush, this, _1, _2), PushConnection::HttpType);
+
+        m_httpd->setHttpCallback(Config::HttpSubscribeUrl, std::tr1::bind(&HttpPushServer::onSubscribe, this, _1, _2));
+        m_httpd->setHttpCallback(Config::HttpUnsubscribeUrl, std::tr1::bind(&HttpPushServer::onUnsubscribe, this, _1, _2));
+        m_httpd->setHttpCallback(Config::HttpPublishUrl, std::tr1::bind(&HttpPushServer::onPublish, this, _1, _2));
 
         m_httpd->listen(Address(Config::HttpListenIp, Config::HttpListenPort));       
     }
@@ -63,27 +64,6 @@ namespace tpush
     {
         sendResponse(conn, 200, message);    
     } 
-
-    void HttpPushServer::onRequest(const HttpRequest& request, const ConnectionPtr_t& conn)
-    {
-        const string& path = request.url;         
-        if(path.find(Config::HttpSubscribeUrl) != string::npos)
-        {
-            onSubscribe(request, conn);
-        }
-        else if(path.find(Config::HttpPublishUrl) != string::npos)
-        {
-            onPublish(request, conn);
-        }
-        else if(path.find(Config::HttpUnsubscribeUrl) != string::npos)
-        {
-            onUnsubscribe(request, conn);
-        }
-        else
-        {
-            sendResponse(conn, 404);
-        }
-    }
 
     int HttpPushServer::checkMethod(const HttpRequest& request, int method, const ConnectionPtr_t& conn)
     {
