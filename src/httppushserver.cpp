@@ -11,7 +11,6 @@
 #include "stringutil.h"
 #include "address.h"
 #include "pushserver.h"
-#include "httpurl.h"
 #include "config.h"
 
 using namespace tnet;
@@ -77,9 +76,8 @@ namespace tpush
 
     int HttpPushServer::checkChannel(const HttpRequest& request, const ConnectionPtr_t& conn, vector<string>& ids)
     {
-        HttpUrl url = HttpUrl(request.url);
-        map<string, string>::iterator iter = url.params.find(Config::HttpChannelKey);
-        if(iter == url.params.end())
+        map<string, string>::const_iterator iter = request.params.find(Config::HttpChannelKey);
+        if(iter == request.params.end())
         {
             sendResponse(conn, 403);
             return -1;        
