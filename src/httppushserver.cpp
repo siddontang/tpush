@@ -4,6 +4,7 @@
 #include "httpserver.h"
 #include "httpresponse.h"
 #include "httpconnection.h"
+#include "wsconnection.h"
 #include "pushconnection.h"
 #include "pushloop.h"
 #include "log.h"
@@ -32,11 +33,14 @@ namespace tpush
 
     void HttpPushServer::start()
     {
-        PushConnection::setPushFunc(std::tr1::bind(&HttpPushServer::onPush, this, _1, _2), PushConnection::HttpType);
+        PushConnection::setPushFunc(std::tr1::bind(&HttpPushServer::onHttpPush, this, _1, _2), PushConnection::HttpType);
+        PushConnection::setPushFunc(std::tr1::bind(&HttpPushServer::onWsPush, this, _1, _2), PushConnection::WsType);
 
         m_httpd->setHttpCallback(Config::HttpSubscribeUrl, std::tr1::bind(&HttpPushServer::onSubscribe, this, _1, _2));
         m_httpd->setHttpCallback(Config::HttpUnsubscribeUrl, std::tr1::bind(&HttpPushServer::onUnsubscribe, this, _1, _2));
         m_httpd->setHttpCallback(Config::HttpPublishUrl, std::tr1::bind(&HttpPushServer::onPublish, this, _1, _2));
+
+        m_httpd->setHttpCallback(Config::WsPushUrl, std::tr1::bind(&HttpPushServer::onWsEvent, this, _1, _2, _3));
 
         m_httpd->listen(Address(Config::HttpListenIp, Config::HttpListenPort));       
     }
@@ -59,10 +63,16 @@ namespace tpush
         conn->send(resp);    
     }
 
-    void HttpPushServer::onPush(const ContextPtr_t& context, const string& message)
+    void HttpPushServer::onHttpPush(const ContextPtr_t& context, const string& message)
     {
         HttpConnectionPtr_t conn = std::tr1::static_pointer_cast<HttpConnection>(context);
         sendResponse(conn, 200, message);    
+    }
+    
+    void HttpPushServer::onWsPush(const ContextPtr_t& context, const string& message)
+    {
+        WsConnectionPtr_t conn = std::tr1::static_pointer_cast<WsConnection>(context);
+        conn->send(message);    
     } 
 
     int HttpPushServer::checkMethod(const HttpConnectionPtr_t& conn, const HttpRequest& request, int method)
@@ -152,5 +162,14 @@ namespace tpush
         sendResponse(conn, 200);
     }
 
-    
+    void HttpPushServer::onWsEvent(const WsConnectionPtr_t& conn, WsEvent event, const string& message)
+    {
+        switch(event)
+        {
+            case Ws_MessageEvent:
+                break;
+            default:
+                break;    
+        }
+    } 
 }

@@ -34,6 +34,7 @@ namespace tpush
     string Config::HttpSubscribeUrl = "/push/subscribe";
     string Config::HttpUnsubscribeUrl = "/push/unsubscribe";
     string Config::HttpPublishUrl = "/push/publish";
+    string Config::WsPushUrl = "/push/ws";
 
     static int parseHandler(void* cfg, const char* section, const char* name, const char* value)
     {

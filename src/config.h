@@ -34,7 +34,7 @@ namespace tpush
         static std::string HttpSubscribeUrl;
         static std::string HttpUnsubscribeUrl;
         static std::string HttpPublishUrl;
-    
+        static std::string WsPushUrl; 
     };    
 }
 
