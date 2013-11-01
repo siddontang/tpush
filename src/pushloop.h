@@ -6,11 +6,11 @@
 #include <vector>
 
 #include "nocopyable.h"
+#include "coredefs.h"
 
 namespace tnet
 {
     class IOLoop;
-    class Timer;
     class nocopyable;    
 }
 
@@ -39,7 +39,7 @@ namespace tpush
         void publishs(const std::vector<std::string>& ids, const std::string& message); 
 
     private:
-        void onCheck(tnet::Timer* timer);
+        void onCheck(const tnet::TimerPtr_t& timer);
 
         void subscribesInLoop(const std::vector<std::string>& ids, const PushConnection& conn);
         void unsubscribesInLoop(const std::vector<std::string>& ids, const PushConnection& conn);
@@ -47,7 +47,7 @@ namespace tpush
 
     private:
         tnet::IOLoop* m_loop;    
-        tnet::Timer* m_checkTimer;
+        tnet::TimerPtr_t m_checkTimer;
     
         typedef std::map<std::string, Channel*> Channels_t;
         

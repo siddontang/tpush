@@ -6,10 +6,7 @@
 #include <vector>
 #include <string>
 
-namespace tnet
-{
-    class Connection;
-}
+#include "httpdefs.h"
 
 namespace tpush
 {
@@ -24,11 +21,8 @@ namespace tpush
             NoType,
         };
 
-        typedef std::tr1::shared_ptr<tnet::Connection> ConnectionPtr_t;
-        typedef std::tr1::weak_ptr<tnet::Connection> WeakConnectionPtr_t;
-
         PushConnection() {}
-        PushConnection(const WeakConnectionPtr_t& conn, int fd, ConnType connType);
+        PushConnection(const tnet::WeakContextPtr_t& conn, int fd, ConnType connType);
         PushConnection(const PushConnection& conn);
 
         ~PushConnection();
@@ -39,21 +33,21 @@ namespace tpush
         }
        
         ConnType getConnType() const { return m_connType; }
-        WeakConnectionPtr_t getConn() const { return m_conn; }
+        tnet::WeakContextPtr_t getConn() const { return m_conn; }
       
         int getSockFd() const { return m_fd; }
        
-        ConnectionPtr_t lock() const { return m_conn.lock(); }
+        tnet::ContextPtr_t lock() const { return m_conn.lock(); }
         
-        typedef std::tr1::function<void (const ConnectionPtr_t&, const std::string&)> PushFunc_t;
+        typedef std::tr1::function<void (const tnet::ContextPtr_t&, const std::string&)> PushFunc_t;
         static void setPushFunc(const PushFunc_t& func, ConnType connType);
 
         static void initPushFuncs();
 
-        static void push(const ConnectionPtr_t& conn, const std::string& message, ConnType connType);
+        static void push(const tnet::ContextPtr_t& conn, const std::string& message, ConnType connType);
 
     private:
-        WeakConnectionPtr_t m_conn;    
+        tnet::WeakContextPtr_t m_conn;    
         ConnType m_connType;
         int m_fd;
 

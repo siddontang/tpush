@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "httpdefs.h"
+
 namespace tnet
 {
     class HttpRequest;
@@ -23,8 +25,6 @@ namespace tpush
     class HttpPushServer
     {
     public:
-        typedef std::tr1::shared_ptr<tnet::Connection> ConnectionPtr_t;
-
         HttpPushServer(PushServer* server);
         ~HttpPushServer();
     
@@ -32,14 +32,15 @@ namespace tpush
         void stop();
 
     private:
-        void onSubscribe(const tnet::HttpRequest&, const ConnectionPtr_t& conn);
-        void onUnsubscribe(const tnet::HttpRequest&, const ConnectionPtr_t& conn);
-        void onPublish(const tnet::HttpRequest&, const ConnectionPtr_t& conn);
-        void onPush(const ConnectionPtr_t& conn, const std::string& message);
+        void onSubscribe(const tnet::HttpConnectionPtr_t& conn, const tnet::HttpRequest& request);
+        void onUnsubscribe(const tnet::HttpConnectionPtr_t& conn, const tnet::HttpRequest& request);
+        void onPublish(const tnet::HttpConnectionPtr_t& conn, const tnet::HttpRequest& request);
 
-        void sendResponse(const ConnectionPtr_t& conn, int statusCode, const std::string& message = std::string(""));
-        int checkMethod(const tnet::HttpRequest&, int method, const ConnectionPtr_t& conn);
-        int checkChannel(const tnet::HttpRequest&, const ConnectionPtr_t& conn, std::vector<std::string>& ids); 
+        void onPush(const tnet::ContextPtr_t& context, const std::string& message);
+
+        void sendResponse(const tnet::HttpConnectionPtr_t& conn, int statusCode, const std::string& message = std::string(""));
+        int checkMethod(const tnet::HttpConnectionPtr_t& conn, const tnet::HttpRequest&, int method);
+        int checkChannel(const tnet::HttpConnectionPtr_t& conn, const tnet::HttpRequest&, std::vector<std::string>& ids); 
 
     private:
         PushServer* m_server;    

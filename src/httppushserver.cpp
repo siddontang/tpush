@@ -3,7 +3,7 @@
 #include "httprequest.h"
 #include "httpserver.h"
 #include "httpresponse.h"
-#include "connection.h"
+#include "httpconnection.h"
 #include "pushconnection.h"
 #include "pushloop.h"
 #include "log.h"
@@ -46,7 +46,7 @@ namespace tpush
         
     }
 
-    void HttpPushServer::sendResponse(const ConnectionPtr_t& conn, int statusCode, const string& message)
+    void HttpPushServer::sendResponse(const HttpConnectionPtr_t& conn, int statusCode, const string& message)
     {
         HttpResponse resp;
         resp.statusCode = statusCode;
@@ -56,15 +56,16 @@ namespace tpush
         resp.enableDate();
         resp.setKeepAlive(true);
         
-        conn->send(resp.dump());    
+        conn->send(resp);    
     }
 
-    void HttpPushServer::onPush(const ConnectionPtr_t& conn, const string& message)
+    void HttpPushServer::onPush(const ContextPtr_t& context, const string& message)
     {
+        HttpConnectionPtr_t conn = std::tr1::static_pointer_cast<HttpConnection>(context);
         sendResponse(conn, 200, message);    
     } 
 
-    int HttpPushServer::checkMethod(const HttpRequest& request, int method, const ConnectionPtr_t& conn)
+    int HttpPushServer::checkMethod(const HttpConnectionPtr_t& conn, const HttpRequest& request, int method)
     {
         if(request.method != (http_method)method)
         {
@@ -74,7 +75,7 @@ namespace tpush
         return 0; 
     }
 
-    int HttpPushServer::checkChannel(const HttpRequest& request, const ConnectionPtr_t& conn, vector<string>& ids)
+    int HttpPushServer::checkChannel(const HttpConnectionPtr_t& conn, const HttpRequest& request, vector<string>& ids)
     {
         map<string, string>::const_iterator iter = request.params.find(Config::HttpChannelKey);
         if(iter == request.params.end())
@@ -94,15 +95,15 @@ namespace tpush
         return 0;
     }
 
-    void HttpPushServer::onSubscribe(const HttpRequest& request, const ConnectionPtr_t& conn)
+    void HttpPushServer::onSubscribe(const HttpConnectionPtr_t& conn, const HttpRequest& request)
     {
-        if(checkMethod(request, (int)HTTP_GET, conn) != 0)
+        if(checkMethod(conn, request, (int)HTTP_GET) != 0)
         {
             return;    
         }
 
         vector<string> ids;
-        if(checkChannel(request, conn, ids) != 0)
+        if(checkChannel(conn, request, ids) != 0)
         {
             return;    
         }   
@@ -112,15 +113,15 @@ namespace tpush
         m_server->dispatchChannels(ids, std::tr1::bind(&PushLoop::subscribes, _1, _2, c));
     }
 
-    void HttpPushServer::onUnsubscribe(const HttpRequest& request, const ConnectionPtr_t& conn)
+    void HttpPushServer::onUnsubscribe(const HttpConnectionPtr_t& conn, const HttpRequest& request)
     {
-        if(checkMethod(request, (int)HTTP_GET, conn) != 0)
+        if(checkMethod(conn, request, (int)HTTP_GET) != 0)
         {
             return;    
         }
         
         vector<string> ids;
-        if(checkChannel(request, conn, ids) != 0)
+        if(checkChannel(conn, request, ids) != 0)
         {
             return;    
         }   
@@ -130,15 +131,15 @@ namespace tpush
         m_server->dispatchChannels(ids, std::tr1::bind(&PushLoop::unsubscribes, _1, _2, c)); 
     }
 
-    void HttpPushServer::onPublish(const HttpRequest& request, const ConnectionPtr_t& conn)
+    void HttpPushServer::onPublish(const HttpConnectionPtr_t& conn, const HttpRequest& request)
     {
-        if(checkMethod(request, (int)HTTP_POST, conn) != 0)
+        if(checkMethod(conn, request, (int)HTTP_POST) != 0)
         {
             return;    
         }
 
         vector<string> ids;
-        if(checkChannel(request, conn, ids) != 0)
+        if(checkChannel(conn, request, ids) != 0)
         {
             return;    
         }   

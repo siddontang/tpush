@@ -17,13 +17,12 @@ namespace tpush
     {
         m_lastCheckIter = m_channels.end();
     
-        m_checkTimer = new Timer(m_loop, std::tr1::bind(&PushLoop::onCheck, this, _1), 
-                    Config::PushLoopCheckRepeat, 60 * 1000); 
+        m_checkTimer = TimerPtr_t(new Timer(m_loop, std::tr1::bind(&PushLoop::onCheck, this, _1), 
+                    Config::PushLoopCheckRepeat, 60 * 1000)); 
     }    
 
     PushLoop::~PushLoop()
     {
-        delete m_checkTimer;
     }
 
     void PushLoop::start()
@@ -125,7 +124,7 @@ namespace tpush
         }    
     }
 
-    void PushLoop::onCheck(Timer* timer)
+    void PushLoop::onCheck(const TimerPtr_t& timer)
     {
         int channelNum = int(m_channels.size());
         for(int step = 0; step < Config::PushLoopCheckStep && step < channelNum; ++step)

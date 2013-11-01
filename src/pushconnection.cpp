@@ -1,12 +1,12 @@
 #include "pushconnection.h"
 
 using namespace std;
-
+using namespace tnet;
 using namespace std::tr1::placeholders;
 
 namespace tpush
 {
-    void dummyPushFunc(const std::tr1::shared_ptr<void>& conn, const string& message)
+    void dummyPushFunc(const ContextPtr_t& conn, const string& message)
     {
         
     }
@@ -24,7 +24,7 @@ namespace tpush
 
     InitPushFuncs initObj;
 
-    PushConnection::PushConnection(const WeakConnectionPtr_t& conn, int fd, ConnType connType)
+    PushConnection::PushConnection(const WeakContextPtr_t& conn, int fd, ConnType connType)
         : m_conn(conn)
         , m_connType(connType)
         , m_fd(fd)
@@ -62,7 +62,7 @@ namespace tpush
         }
     }
 
-    void PushConnection::push(const ConnectionPtr_t& conn, const string& message, ConnType connType)
+    void PushConnection::push(const ContextPtr_t& conn, const string& message, ConnType connType)
     {    
         if(int(connType) >= 0 && int(connType) < int(NoType))
         {

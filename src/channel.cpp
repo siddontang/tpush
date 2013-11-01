@@ -53,7 +53,7 @@ namespace tpush
             return;    
         }
     
-        ConnectionPtr_t c = conn.lock();
+        ContextPtr_t c = conn.lock();
         if(!c)
         {
             return;    
@@ -95,7 +95,7 @@ namespace tpush
             for(PushConnections_t::iterator iter = m_connections.begin(); 
                 iter != m_connections.end();)
             {
-                ConnectionPtr_t c = iter->second.lock();
+                ContextPtr_t c = iter->second.lock();
                 if(c)
                 {
                     pushMessage(c, message, iter->second.getConnType());    
@@ -121,7 +121,7 @@ namespace tpush
         }
     }
 
-    void Channel::pushMessage(const ConnectionPtr_t& conn, const string& message, PushConnection::ConnType connType)
+    void Channel::pushMessage(const ContextPtr_t& conn, const string& message, PushConnection::ConnType connType)
     {
         PushConnection::push(conn, message, connType);
     }

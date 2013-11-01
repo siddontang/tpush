@@ -12,20 +12,13 @@
 
 #include "nocopyable.h"
 #include "pushconnection.h"
-
-namespace tnet
-{
-    class Connection;
-}
+#include "httpdefs.h"
 
 namespace tpush
 {
     class Channel : public tnet::nocopyable
     {
     public:
-        typedef std::tr1::weak_ptr<tnet::Connection> WeakConnectionPtr_t;
-        typedef std::tr1::shared_ptr<tnet::Connection> ConnectionPtr_t;
-
         Channel(const std::string& id);
         ~Channel();
        
@@ -42,7 +35,7 @@ namespace tpush
         void checkMessages();
         void checkConnections();
     
-        void pushMessage(const ConnectionPtr_t& conn, const std::string& message, PushConnection::ConnType connType);
+        void pushMessage(const tnet::ContextPtr_t& conn, const std::string& message, PushConnection::ConnType connType);
 
     private:
         std::string m_id;    

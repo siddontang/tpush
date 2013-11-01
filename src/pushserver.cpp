@@ -9,7 +9,6 @@
 #include "config.h"
 #include "misc.h"
 #include "pushconnection.h"
-#include "connection.h"
 #include "stringutil.h"
 #include "tcpserver.h"
 #include "httppushserver.h"

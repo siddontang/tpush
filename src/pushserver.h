@@ -28,8 +28,6 @@ namespace tpush
     public:
         friend class HttpPushServer;
 
-        typedef std::tr1::shared_ptr<tnet::Connection> ConnectionPtr_t;
-
         PushServer();
         ~PushServer();
         
