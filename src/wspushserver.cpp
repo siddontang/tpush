@@ -32,8 +32,6 @@ namespace tpush
 
     void WsPushServer::start()
     {
-        regDefaultProtoHandler();
-
         PushConnection::setPushFunc(std::tr1::bind(&WsPushServer::push, this, _1, _2), PushConnection::WsType);
     
         m_httpd->setWsCallback(Config::WsPushUrl, std::tr1::bind(&WsPushServer::onEvent, this, _1, _2, _3));
@@ -42,11 +40,6 @@ namespace tpush
     void WsPushServer::stop()
     {
         
-    }
-
-    void WsPushServer::regDefaultProtoHandler()
-    {
-        setDataProtoHandler(Ws_DelimProto, std::tr1::bind(&wsDataDelimProto, _1, _2));
     }
 
     void WsPushServer::push(const ContextPtr_t& context, const string& message)
@@ -67,20 +60,21 @@ namespace tpush
         }
     }
 
-    void WsPushServer::setDataProtoHandler(WsDataProtoType proto, const ProtoHandler_t& handler)
-    {
-        if(int(proto) >= 0 && int(proto) < Ws_NoneProto)
-        {
-            m_handlers[proto] = handler;     
-        }
-    }
-
     void WsPushServer::onData(const WsConnectionPtr_t& conn, const string& data)
     {
-        WsDataProtoType proto = Config::WsDataProto;
-       
+        int ret = 0;
         WsPushRequest request;
-        if((m_handlers[proto])(data, request) != 0)
+
+        switch(Config::WsDataProto)
+        {
+            case Ws_DelimProto:
+                ret = wsDataDelimProto(data, request);    
+                break;
+            default:
+                ret = -1;
+        }
+
+        if(ret != 0)
         {
             conn->shutDown();    
             return;

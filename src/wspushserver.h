@@ -27,9 +27,6 @@ namespace tpush
         
         void start();
         void stop();
-   
-        typedef std::tr1::function<int (const std::string&, WsPushRequest& request)> ProtoHandler_t;
-        void setDataProtoHandler(WsDataProtoType proto, const ProtoHandler_t& handler); 
     
     private:
         void push(const tnet::ContextPtr_t& context, const std::string& message);
@@ -38,13 +35,9 @@ namespace tpush
 
         void onData(const tnet::WsConnectionPtr_t& conn, const std::string& data);
 
-        void regDefaultProtoHandler();
-
     private:
         PushServer* m_server;
         tnet::HttpServer* m_httpd;     
-
-        std::vector<ProtoHandler_t> m_handlers;
     }; 
 }
 
