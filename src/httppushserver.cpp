@@ -84,7 +84,7 @@ namespace tpush
     }
 
     void HttpPushServer::onRequest(const HttpConnectionPtr_t& conn, const HttpRequest& request)
-    {
+    { 
         switch(request.method)
         {
             case HTTP_GET:
@@ -108,8 +108,8 @@ namespace tpush
         if(checkChannel(conn, request, ids) != 0)
         {
             return;    
-        }   
-        
+        }
+         
         PushConnection c(conn, conn->getSockFd(), PushConnection::HttpType);
 
         m_server->dispatchChannels(ids, std::tr1::bind(&PushLoop::subscribes, _1, _2, c));
@@ -121,8 +121,8 @@ namespace tpush
         if(checkChannel(conn, request, ids) != 0)
         {
             return;    
-        }   
-        
+        }
+         
         PushConnection c(conn, conn->getSockFd(), PushConnection::HttpType);
 
         m_server->dispatchChannels(ids, std::tr1::bind(&PushLoop::unsubscribes, _1, _2, c)); 
@@ -134,11 +134,16 @@ namespace tpush
         if(checkChannel(conn, request, ids) != 0)
         {
             return;    
-        }   
-
+        }
+         
         if(!request.body.empty())
         {
             m_server->dispatchChannels(ids, std::tr1::bind(&PushLoop::publishs, _1, _2, request.body));
+        }
+        else
+        {
+            sendResponse(conn, 400);
+            return;    
         }
 
         sendResponse(conn, 200);
