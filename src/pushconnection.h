@@ -16,8 +16,7 @@ namespace tpush
         enum ConnType
         {
             HttpType = 0,
-            WebSocketType,
-            TcpType,    
+            WsType,
             NoType,
         };
 

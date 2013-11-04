@@ -1,5 +1,7 @@
 #include "httppushserver.h"
 
+#include <stdlib.h>
+
 #include "httprequest.h"
 #include "httpserver.h"
 #include "httpresponse.h"
@@ -40,7 +42,7 @@ namespace tpush
         m_httpd->setHttpCallback(Config::HttpUnsubscribeUrl, std::tr1::bind(&HttpPushServer::onUnsubscribe, this, _1, _2));
         m_httpd->setHttpCallback(Config::HttpPublishUrl, std::tr1::bind(&HttpPushServer::onPublish, this, _1, _2));
 
-        m_httpd->setHttpCallback(Config::WsPushUrl, std::tr1::bind(&HttpPushServer::onWsEvent, this, _1, _2, _3));
+        m_httpd->setWsCallback(Config::WsPushUrl, std::tr1::bind(&HttpPushServer::onWsEvent, this, _1, _2, _3));
 
         m_httpd->listen(Address(Config::HttpListenIp, Config::HttpListenPort));       
     }
@@ -93,8 +95,8 @@ namespace tpush
             sendResponse(conn, 403);
             return -1;        
         }
-        
-        ids = StringUtil::split(iter->second, ",");
+       
+        ids = StringUtil::split(iter->second, Config::ChannelDelim);
 
         if(ids.empty())
         {
@@ -167,9 +169,70 @@ namespace tpush
         switch(event)
         {
             case Ws_MessageEvent:
+                onWsMessage(conn, message);
                 break;
             default:
                 break;    
         }
+    }
+    
+    void HttpPushServer::handleWsDelimProtoData(const WsConnectionPtr_t& conn, const string& message)
+    {
+        vector<string> tokens = StringUtil::split(message, Config::WsDataDelim, 3);
+        if(tokens.size() < 2)
+        {
+            conn->shutDown();
+            return;    
+        }
+
+        int action = atoi(tokens[0].c_str());
+        vector<string> ids = StringUtil::split(tokens[1], Config::ChannelDelim);
+        if(ids.empty())
+        {
+            conn->shutDown();
+            return;    
+        } 
+        
+ 
+        switch(action)
+        {
+            case(1):
+                //subscribe
+                {
+                    PushConnection c(conn, conn->getSockFd(), PushConnection::WsType);
+                    m_server->dispatchChannels(ids, std::tr1::bind(&PushLoop::subscribes, _1, _2, c));
+                }
+                break;
+            case(2):
+                //unsubscribe
+                {
+                    PushConnection c(conn, conn->getSockFd(), PushConnection::WsType);
+                    m_server->dispatchChannels(ids, std::tr1::bind(&PushLoop::unsubscribes, _1, _2, c));
+                }
+                break;
+            case(3):
+                //publish
+                if(tokens.size() == 3 && !tokens[2].empty())
+                {
+                    m_server->dispatchChannels(ids, std::tr1::bind(&PushLoop::publishs, _1, _2, tokens[2]));
+                }
+                else
+                {
+                    conn->shutDown();    
+                }
+                break;
+            default:
+                conn->shutDown();    
+        }
+    }
+
+    void HttpPushServer::onWsMessage(const WsConnectionPtr_t& conn, const string& message)
+    {
+        switch(Config::WsDataProto)
+        {
+            case Ws_DelimProto:
+                handleWsDelimProtoData(conn, message);
+                break;    
+        }        
     } 
 }

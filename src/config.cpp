@@ -17,7 +17,7 @@ namespace tpush
 
     int Config::TcpConnCheckRepeat = 10;
     int Config::TcpConnCheckStep = 2000;
-    int Config::TcpConnTimeout = 60;
+    int Config::TcpConnTimeout = 600;
 
     int Config::PushLoopNum = 4;
     int Config::MaxChannelConnectionNum = 10000;
@@ -27,6 +27,7 @@ namespace tpush
     int Config::MaxChannelMessageSize = 128;
     int Config::PushLoopCheckRepeat = 30;
     int Config::PushLoopCheckStep = 2000;
+    string Config::ChannelDelim = ",";
 
     string Config::HttpListenIp = "0.0.0.0";
     uint16_t Config::HttpListenPort = 11181;
@@ -35,6 +36,8 @@ namespace tpush
     string Config::HttpUnsubscribeUrl = "/push/unsubscribe";
     string Config::HttpPublishUrl = "/push/publish";
     string Config::WsPushUrl = "/push/ws";
+    WsDataProtoType Config::WsDataProto = Ws_DelimProto;
+    string Config::WsDataDelim = "&";
 
     static int parseHandler(void* cfg, const char* section, const char* name, const char* value)
     {
