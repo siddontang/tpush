@@ -12,6 +12,8 @@
 #include "stringutil.h"
 #include "tcpserver.h"
 #include "httppushserver.h"
+#include "httpserver.h"
+#include "wspushserver.h"
 
 using namespace tnet;
 using namespace std;
@@ -26,8 +28,11 @@ namespace tpush
         m_server->setConnCheckRepeat(Config::TcpConnCheckRepeat);
         m_server->setConnCheckStep(Config::TcpConnCheckStep);
         m_server->setConnTimeout(Config::TcpConnTimeout);
+
+        m_httpd = new HttpServer(m_server);
        
-        m_httpPushServer = new HttpPushServer(this);
+        m_httpPushServer = new HttpPushServer(this, m_httpd);
+        m_wsPushServer = new WsPushServer(this, m_httpd);
 
         m_pool = new IOLoopThreadPool(Config::PushLoopNum, "pushloop");    
     
@@ -42,8 +47,14 @@ namespace tpush
     PushServer::~PushServer()
     {
         for_each_all_delete(m_loops);
+
         delete m_pool;    
         
+        delete m_wsPushServer;
+        delete m_httpPushServer;
+
+        delete m_httpd;
+
         delete m_server;
     }
 
@@ -54,6 +65,9 @@ namespace tpush
         for_each_all(m_loops, std::tr1::bind(&PushLoop::start, _1));    
     
         m_httpPushServer->start();
+        m_wsPushServer->start();
+
+        m_httpd->listen(Address(Config::HttpListenIp, Config::HttpListenPort));       
 
         m_server->start();
     }

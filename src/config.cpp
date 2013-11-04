@@ -32,9 +32,7 @@ namespace tpush
     string Config::HttpListenIp = "0.0.0.0";
     uint16_t Config::HttpListenPort = 11181;
     string Config::HttpChannelKey = "id";
-    string Config::HttpSubscribeUrl = "/push/subscribe";
-    string Config::HttpUnsubscribeUrl = "/push/unsubscribe";
-    string Config::HttpPublishUrl = "/push/publish";
+    string Config::HttpPushUrl = "/push";
     string Config::WsPushUrl = "/push/ws";
     WsDataProtoType Config::WsDataProto = Ws_DelimProto;
     string Config::WsDataDelim = "&";

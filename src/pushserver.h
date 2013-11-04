@@ -16,25 +16,26 @@ namespace tnet
     class HttpRequest;
     class Connection;
     class TcpServer;
+    class HttpServer;
 }
 
 namespace tpush
 {
     class PushLoop;
     class HttpPushServer;
+    class WsPushServer;
 
     class PushServer : public tnet::nocopyable
     {
     public:
         friend class HttpPushServer;
+        friend class WsPushServer;
 
         PushServer();
         ~PushServer();
         
         void start();
         void stop();
-   
-        tnet::TcpServer* getServer() { return m_server; }
 
     private:
         PushLoop* getHashLoop(const std::string& channel);
@@ -47,7 +48,9 @@ namespace tpush
         tnet::IOLoopThreadPool* m_pool;
         std::vector<PushLoop*> m_loops;
         
-        HttpPushServer* m_httpPushServer;    
+        tnet::HttpServer* m_httpd;
+        HttpPushServer* m_httpPushServer;  
+        WsPushServer* m_wsPushServer;  
     };
         
 }

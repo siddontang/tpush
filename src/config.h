@@ -4,13 +4,10 @@
 #include <string>
 #include <stdint.h>
 
+#include "pushenums.h"
+
 namespace tpush
 {
-    enum WsDataProtoType
-    {
-        Ws_DelimProto = 0,    
-    };
-    
     class Config
     {
     public:
@@ -37,9 +34,7 @@ namespace tpush
         static std::string HttpListenIp;
         static uint16_t HttpListenPort;
         static std::string HttpChannelKey;
-        static std::string HttpSubscribeUrl;
-        static std::string HttpUnsubscribeUrl;
-        static std::string HttpPublishUrl;
+        static std::string HttpPushUrl;
         static std::string WsPushUrl; 
         static WsDataProtoType WsDataProto;
         static std::string WsDataDelim;

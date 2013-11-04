@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "httpdefs.h"
+#include "nocopyable.h"
 
 namespace tnet
 {
@@ -22,10 +23,10 @@ namespace tpush
     class PushServer;
     class PushConnection;
 
-    class HttpPushServer
+    class HttpPushServer : public tnet::nocopyable
     {
     public:
-        HttpPushServer(PushServer* server);
+        HttpPushServer(PushServer* server, tnet::HttpServer* httpd);
         ~HttpPushServer();
     
         void start();
@@ -36,16 +37,11 @@ namespace tpush
         void onUnsubscribe(const tnet::HttpConnectionPtr_t& conn, const tnet::HttpRequest& request);
         void onPublish(const tnet::HttpConnectionPtr_t& conn, const tnet::HttpRequest& request);
 
-        void onWsEvent(const tnet::WsConnectionPtr_t& conn, tnet::WsEvent event, const std::string& message);
-        void onWsMessage(const tnet::WsConnectionPtr_t& conn, const std::string& message);
+        void onRequest(const tnet::HttpConnectionPtr_t& conn, const tnet::HttpRequest& request);
 
-        void handleWsDelimProtoData(const tnet::WsConnectionPtr_t& conn, const std::string& message); 
-
-        void onHttpPush(const tnet::ContextPtr_t& context, const std::string& message);
-        void onWsPush(const tnet::ContextPtr_t& context, const std::string& message);
+        void push(const tnet::ContextPtr_t& context, const std::string& message);
 
         void sendResponse(const tnet::HttpConnectionPtr_t& conn, int statusCode, const std::string& message = std::string(""));
-        int checkMethod(const tnet::HttpConnectionPtr_t& conn, const tnet::HttpRequest&, int method);
         int checkChannel(const tnet::HttpConnectionPtr_t& conn, const tnet::HttpRequest&, std::vector<std::string>& ids); 
 
     private:

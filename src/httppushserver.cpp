@@ -22,29 +22,21 @@ using namespace std::tr1::placeholders;
 
 namespace tpush
 {
-    HttpPushServer::HttpPushServer(PushServer* server)
+    HttpPushServer::HttpPushServer(PushServer* server, HttpServer* httpd)
         : m_server(server)
+        , m_httpd(httpd)
     {
-        m_httpd = new HttpServer(server->getServer());
     }
 
     HttpPushServer::~HttpPushServer()
     {
-        delete m_httpd;    
     }
 
     void HttpPushServer::start()
     {
-        PushConnection::setPushFunc(std::tr1::bind(&HttpPushServer::onHttpPush, this, _1, _2), PushConnection::HttpType);
-        PushConnection::setPushFunc(std::tr1::bind(&HttpPushServer::onWsPush, this, _1, _2), PushConnection::WsType);
+        PushConnection::setPushFunc(std::tr1::bind(&HttpPushServer::push, this, _1, _2), PushConnection::HttpType);
 
-        m_httpd->setHttpCallback(Config::HttpSubscribeUrl, std::tr1::bind(&HttpPushServer::onSubscribe, this, _1, _2));
-        m_httpd->setHttpCallback(Config::HttpUnsubscribeUrl, std::tr1::bind(&HttpPushServer::onUnsubscribe, this, _1, _2));
-        m_httpd->setHttpCallback(Config::HttpPublishUrl, std::tr1::bind(&HttpPushServer::onPublish, this, _1, _2));
-
-        m_httpd->setWsCallback(Config::WsPushUrl, std::tr1::bind(&HttpPushServer::onWsEvent, this, _1, _2, _3));
-
-        m_httpd->listen(Address(Config::HttpListenIp, Config::HttpListenPort));       
+        m_httpd->setHttpCallback(Config::HttpPushUrl, std::tr1::bind(&HttpPushServer::onRequest, this, _1, _2));
     }
 
     void HttpPushServer::stop()
@@ -65,26 +57,10 @@ namespace tpush
         conn->send(resp);    
     }
 
-    void HttpPushServer::onHttpPush(const ContextPtr_t& context, const string& message)
+    void HttpPushServer::push(const ContextPtr_t& context, const string& message)
     {
         HttpConnectionPtr_t conn = std::tr1::static_pointer_cast<HttpConnection>(context);
         sendResponse(conn, 200, message);    
-    }
-    
-    void HttpPushServer::onWsPush(const ContextPtr_t& context, const string& message)
-    {
-        WsConnectionPtr_t conn = std::tr1::static_pointer_cast<WsConnection>(context);
-        conn->send(message);    
-    } 
-
-    int HttpPushServer::checkMethod(const HttpConnectionPtr_t& conn, const HttpRequest& request, int method)
-    {
-        if(request.method != (http_method)method)
-        {
-            sendResponse(conn, 405);
-            return -1;    
-        }
-        return 0; 
     }
 
     int HttpPushServer::checkChannel(const HttpConnectionPtr_t& conn, const HttpRequest& request, vector<string>& ids)
@@ -107,13 +83,27 @@ namespace tpush
         return 0;
     }
 
+    void HttpPushServer::onRequest(const HttpConnectionPtr_t& conn, const HttpRequest& request)
+    {
+        switch(request.method)
+        {
+            case HTTP_GET:
+                onSubscribe(conn, request);
+                break;
+            case HTTP_POST:
+                onPublish(conn, request);
+                break;
+            case HTTP_DELETE:
+                onUnsubscribe(conn, request);
+                break;
+            default:
+                sendResponse(conn, 405);
+                break;    
+        }    
+    }
+
     void HttpPushServer::onSubscribe(const HttpConnectionPtr_t& conn, const HttpRequest& request)
     {
-        if(checkMethod(conn, request, (int)HTTP_GET) != 0)
-        {
-            return;    
-        }
-
         vector<string> ids;
         if(checkChannel(conn, request, ids) != 0)
         {
@@ -127,11 +117,6 @@ namespace tpush
 
     void HttpPushServer::onUnsubscribe(const HttpConnectionPtr_t& conn, const HttpRequest& request)
     {
-        if(checkMethod(conn, request, (int)HTTP_GET) != 0)
-        {
-            return;    
-        }
-        
         vector<string> ids;
         if(checkChannel(conn, request, ids) != 0)
         {
@@ -145,11 +130,6 @@ namespace tpush
 
     void HttpPushServer::onPublish(const HttpConnectionPtr_t& conn, const HttpRequest& request)
     {
-        if(checkMethod(conn, request, (int)HTTP_POST) != 0)
-        {
-            return;    
-        }
-
         vector<string> ids;
         if(checkChannel(conn, request, ids) != 0)
         {
@@ -163,76 +143,4 @@ namespace tpush
 
         sendResponse(conn, 200);
     }
-
-    void HttpPushServer::onWsEvent(const WsConnectionPtr_t& conn, WsEvent event, const string& message)
-    {
-        switch(event)
-        {
-            case Ws_MessageEvent:
-                onWsMessage(conn, message);
-                break;
-            default:
-                break;    
-        }
-    }
-    
-    void HttpPushServer::handleWsDelimProtoData(const WsConnectionPtr_t& conn, const string& message)
-    {
-        vector<string> tokens = StringUtil::split(message, Config::WsDataDelim, 3);
-        if(tokens.size() < 2)
-        {
-            conn->shutDown();
-            return;    
-        }
-
-        int action = atoi(tokens[0].c_str());
-        vector<string> ids = StringUtil::split(tokens[1], Config::ChannelDelim);
-        if(ids.empty())
-        {
-            conn->shutDown();
-            return;    
-        } 
-        
- 
-        switch(action)
-        {
-            case(1):
-                //subscribe
-                {
-                    PushConnection c(conn, conn->getSockFd(), PushConnection::WsType);
-                    m_server->dispatchChannels(ids, std::tr1::bind(&PushLoop::subscribes, _1, _2, c));
-                }
-                break;
-            case(2):
-                //unsubscribe
-                {
-                    PushConnection c(conn, conn->getSockFd(), PushConnection::WsType);
-                    m_server->dispatchChannels(ids, std::tr1::bind(&PushLoop::unsubscribes, _1, _2, c));
-                }
-                break;
-            case(3):
-                //publish
-                if(tokens.size() == 3 && !tokens[2].empty())
-                {
-                    m_server->dispatchChannels(ids, std::tr1::bind(&PushLoop::publishs, _1, _2, tokens[2]));
-                }
-                else
-                {
-                    conn->shutDown();    
-                }
-                break;
-            default:
-                conn->shutDown();    
-        }
-    }
-
-    void HttpPushServer::onWsMessage(const WsConnectionPtr_t& conn, const string& message)
-    {
-        switch(Config::WsDataProto)
-        {
-            case Ws_DelimProto:
-                handleWsDelimProtoData(conn, message);
-                break;    
-        }        
-    } 
 }

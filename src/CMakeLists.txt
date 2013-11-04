@@ -7,6 +7,8 @@ set(TPUSH_SRCS
     pushloop.cpp
     pushserver.cpp
     httppushserver.cpp
+    wspushserver.cpp
+    wsdelimproto.cpp
     )
 
 include_directories(${TPUSH_SOURCE_DIR}/tnet/core)
