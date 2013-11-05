@@ -6,12 +6,18 @@
 #include "pushenums.h"
 #include "config.h"
 #include "stringutil.h"
+#include "log.h"
 
 using namespace std;
 using namespace tnet;
 
 namespace tpush
 {
+    //ws data proto like action'delim'channel['delim'message]
+    //delim is defined in Config::WsDataDelim
+    //actino is 1 subscribe, 2 unsubscribe, 3 publish
+    //channel liks 1'delim'2'delim' delim is defined in Config::ChannelDelim
+    //message is used for publish 
     int wsDataDelimProto(const string& data, WsPushRequest& request)
     {
         vector<string> tokens = StringUtil::split(data, Config::WsDataDelim, 3);
@@ -33,13 +39,16 @@ namespace tpush
             return -1;    
         }
 
-        if(action == Ws_Publish && tokens.size() == 3 && !tokens[2].empty())
+        if(action == Ws_Publish)
         {
-            request.message = tokens[2];
-        }
-        else
-        {
-            return -1;    
+            if(tokens.size() == 3 && !tokens[2].empty())
+            {
+                request.message = tokens[2];
+            }
+            else
+            {
+                return -1;    
+            }
         }
 
         return 0;
